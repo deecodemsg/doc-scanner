@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "outDir": "./dist/types",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "resolveJsonModule": true,
+    "lib": ["ES2018", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*", "webpack.*.ts"],
+  "exclude": ["node_modules", "dist", "dist-standalone"]
+}
