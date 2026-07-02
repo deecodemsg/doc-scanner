@@ -6,6 +6,7 @@ import type {
   ViewMode,
 } from "dwt/dist/types/WebTwain.Viewer";
 import type { WebTwain } from "dwt/dist/types/WebTwain";
+import { environment as defaultEnvironment } from "../../environments/environment";
 
 import {
   getEl,
@@ -24,7 +25,7 @@ import { Subscription } from "rxjs";
 
 let _arrMessages: string[] = []; // Store the temp string for display
 let _iLeft: number, _iTop: number, _iRight: number, _iBottom: number; //These variables are used to remember the selected area
-
+const HOST = defaultEnvironment.Dynamsoft.host;
 export class DwtUIOperations {
   protected dwtService: DwtService;
   protected dwtObject?: WebTwain;
@@ -471,7 +472,6 @@ export class DwtUIOperations {
         )
         .then(
           (res) => {
-
             alert("Upload successful.");
 
             checkErrorStringWithErrorCode(0, "Successful.");
@@ -507,11 +507,11 @@ export class DwtUIOperations {
           async (res) => {
             checkErrorStringWithErrorCode(0, "Successful.");
             const base64 = await this.dwtService.getBase64(
-                selectedIndices,
-                enumImageType,
-              );
+              selectedIndices,
+              enumImageType,
+            );
             appendStrongMessage("Saved Folderd detail: " + res.path);
-            return {...res, base64};
+            return { ...res, base64 };
           },
           (error) =>
             typeof error === "string"
@@ -689,7 +689,7 @@ export class DwtUIOperations {
         ) as HTMLElement;
         if (scrollEl) {
           scrollEl.style.background =
-            "url('http://localhost:3000/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5";
+            `url('${HOST}/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5`;
         }
       }
     }
@@ -796,7 +796,8 @@ export class DwtUIOperations {
     if (Dynamsoft.Lib.detect.ssl == true)
       _strPort = location.port == "" ? 443 : parseInt(location.port);
     this.dwtObject.HTTPPort = _strPort;
-    let strDownloadFile = "http://localhost:3000/assets/Images/DynamsoftSample.pdf";
+    let strDownloadFile =
+      `${HOST}/assets/Images/DynamsoftSample.pdf`;
 
     this.dwtObject?.HTTPDownload(
       location.hostname,
@@ -894,7 +895,7 @@ export class DwtUIOperations {
         ) as HTMLElement;
         if (scrollEl) {
           scrollEl.style.background =
-            "url('http://localhost:3000/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5";
+            `url('${HOST}/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5`;
         }
         dynamicWebTWAINInstance.Viewer.background = "";
         thumbnailViewer.background = "#F5F5F5";

@@ -1,7 +1,6 @@
 # DynamicWebTWAIN — React MFE
 
 A **Micro Frontend (MFE)** build of the Dynamic Web TWAIN React sample.
-Next.js has been replaced with Webpack 5; all code is TypeScript.
 
 ---
 
@@ -33,8 +32,6 @@ dwt-mfe/
 ├── webpack.base.ts
 ├── webpack.dev.ts             ← Dev server (standalone app)
 ├── webpack.prod.ts            ← MFE library build (React externalized)
-├── webpack.standalone.ts      ← Self-contained production build
-├── embed-example.html         ← Vanilla-JS embed demo
 ├── tsconfig.json
 └── package.json
 ```
@@ -57,78 +54,80 @@ npm start
 ### Production builds
 
 ```bash
-# Both builds at once:
-npm run build:all
 
 # MFE library only (React externalized — for React host apps):
 npm run build          # → dist/dwt-mfe.js
 
-# Standalone bundle (React included — drop into any page):
-npm run build:standalone   # → dist-standalone/dwt-standalone.js
 ```
 
 ---
 
 ## Usage modes
 
-### Mode 1 — React component (plug-and-play in a React host)
+### Standalone app
 
-```tsx
-import DWTApp from 'dynamic-web-twain-mfe';       // or path to dist/dwt-mfe.js
+Use `npm start` to run the bundled standalone app at `http://localhost:3000`.
+The standalone build includes the self-contained app and uses the same exposed
+component, but with `react` and `react-dom` shared by the bundler.
 
-function HostApp() {
-  return (
-    <DWTApp
-      showHeader={true}
-      config={{
-        dwtProductKey: 'YOUR_PRODUCT_KEY',
-        uploadTargetURL: 'https://your-server.com/upload',
-        resourcesPath: '/path/to/Resources',
-      }}
-    />
-  );
-}
+### MFE host app
+
+This project exposes the React component at:
+
+- `dwt_mfe` remote name
+- exposed module: `./App`
+
+The host app must load the MFE remote entry and mount the exposed component. For
+example, in a host Webpack Module Federation config:
+
+```js
+remotes: {
+  dwt_mfe: 'dwt_mfe@http://localhost:3000/remoteEntry.js',
+},
 ```
 
-The host app supplies its own React; `dwt-mfe.js` externalizes `react` and
-`react-dom` so there is only one copy in the bundle.
+Then import the component in the host app:
 
-### Mode 2 — Vanilla JS mount helper (non-React host)
+```js
+const DWTApp = React.lazy(() => import('dwt_mfe/App'));
 
-```html
-<!-- include once -->
-<script src="dwt-standalone.js"></script>
-
-<div id="scanner"></div>
-<script>
-  // mount returns a teardown function
-  const teardown = DWTMfe.mount('#scanner', {
-    showHeader: false,
-    config: { dwtProductKey: 'YOUR_KEY' }
-  });
-
-  // unmount later
-  // teardown();
-</script>
+// render inside a Suspense boundary
+<DWTApp
+  showHeader={false}
+/>
 ```
 
-### Mode 3 — Standalone page
-
-Open `dist-standalone/index.html` directly in a browser (or serve the
-`dist-standalone/` folder).  No host page or framework required.
-
----
+> The host app needs the correct remote URL to load `remoteEntry.js` and the
+> exposed component path `dwt_mfe/App`.
 
 ## Configuration
 
-The `config` prop (React) or second argument to `mount()` accepts:
+The `config` prop (React) accepts these optional `Dynamsoft` keys:
 
 | Key | Type | Default |
 |---|---|---|
-| `dwtProductKey` | `string` | trial key in `environment.ts` |
-| `resourcesPath` | `string` | `'Resources'` |
+| `host` | `string` | `http://localhost:3000` |
+| `resourcesPath` | `string` | `host + '/Resources'` |
+| `dwtProductKey` | `string` | from `REACT_APP_DWT_PRODUCT_KEY` or empty |
 | `serviceInstallerLocation` | `string` | Dynamsoft CDN |
-| `uploadTargetURL` | `string` | Dynamsoft demo server |
+| `uploadTargetURL` | `string` | from `REACT_APP_UPLOAD_URL` or demo upload server |
+
+### Dynamsoft product key
+
+The product key is required for production use of Dynamic Web TWAIN:
+You can get it from https://www.dynamsoft.com/customer/license/trialLicense?product=dwt and then
+
+1. Set `REACT_APP_DWT_PRODUCT_KEY` before building the MFE.
+
+### Required host URL
+
+The host app should also provide the `host` URL when the DWT assets are served
+from a different location. This is used to resolve the component CSS and image
+assets, and to construct the default `resourcesPath`.
+
+```tsx
+<DWTApp config={{ host: 'https://my-hosted-mfe.com' }} />
+```
 
 ---
 
@@ -136,5 +135,5 @@ The `config` prop (React) or second argument to `mount()` accepts:
 
 After `npm install`, run `npm run copy-dwt` (or it runs automatically before
 `start`/`build`) to copy the DWT runtime from `node_modules/dwt/dist` into
-`public/Resources/`.  The Webpack `CopyPlugin` then copies that folder into
-the output directory on every build.
+`public/Resources/`. The Webpack `CopyPlugin` then copies that folder into the
+output directory on every build.

@@ -4,16 +4,22 @@ export interface DWTEnvironment {
     dwtProductKey: string;
     serviceInstallerLocation: string;
     uploadTargetURL: string;
+    host?: string;
   };
   debug: boolean;
 }
 
+const host = process.env.REACT_APP_HOST;
+const dwtProductKey = process.env.REACT_APP_DWT_PRODUCT_KEY;
+const uploadTargetURL = process.env.REACT_APP_UPLOAD_URL;
+
 export const environment: DWTEnvironment = {
   Dynamsoft: {
-    resourcesPath: 'http://localhost:3000/Resources',
-    dwtProductKey: 't0198EQYAAJjgsS4eBJiyZ9irJh61oJvwulamjA8wAZXPcFQ7X//g4dJoz42lB7GS/x3BpjnomgcO5FSJuFhMhLUQI35GeYj2unOygVPrO1XqO9HAyUdOkWF/deG0zT5vm8AVGHdAj+twAEiBsJYTMHXf0TtDBLAEaAHQ0hpQArK78MVnWrzt81rT/w4052QDp9Z3pgGp40QDJx85fUCsE7P43c4hIEhvTgSwBGgWwO9HdgmInAGWAM0C0ynFjABxdLB24AdaBD8k',
+    host: host || 'http://localhost:3000',
+    resourcesPath: host+'/Resources',
+    dwtProductKey: dwtProductKey || '',
     serviceInstallerLocation: 'https://demo.dynamsoft.com/DWT/Resources/dist/19.4/',
-    uploadTargetURL: 'https://demo.dynamsoft.com/sample-uploads/',
+    uploadTargetURL: uploadTargetURL || 'https://demo.dynamsoft.com/sample-uploads/',
   },
   debug: false,
 };

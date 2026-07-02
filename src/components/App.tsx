@@ -63,24 +63,25 @@ export default class DWTApp extends Component<DWTAppProps> {
 
   render() {
     const { className, showHeader, strFileNameWithoutExt } = this.props;
+    const HOST = defaultEnvironment.Dynamsoft.host;
 
     return (
       <div className={className}>
         <Helmet>
           <link
             rel="stylesheet"
-            href="http://localhost:3000/assets/Styles/style.css"
+            href={HOST+'/assets/Styles/style.css'}
           />
           <link
             rel="stylesheet"
-            href="http://localhost:3000/assets/Styles/fonts.css"
+            href={HOST+'/assets/Styles/fonts.css'}
           />
         </Helmet>
         {showHeader && (
           <>
             <div className="ds-dwt-logo">
               <img
-                src="http://localhost:3000/assets/Images/logo.png"
+                src={HOST+'/assets/Images/logo.png'}
                 alt="Dynamsoft Logo"
               />
             </div>
