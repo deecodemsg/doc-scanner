@@ -25,7 +25,7 @@ export default class DWTScan extends Component<Props, State> {
       IfFeederEnabled: true,
       IfAutoDiscardBlankpages: false,
       IfDuplexEnabled: false,
-      PixelType: "1",
+      PixelType: "0",
       Resolution: "200",
     };
   }
@@ -38,13 +38,13 @@ export default class DWTScan extends Component<Props, State> {
     }
   }
 
-  private handleCheckBoxChange(
-    event: React.ChangeEvent<HTMLInputElement>,
-    checkBoxName: keyof State,
-  ) {
-    const bChecked = event.target.checked;
-    this.setState({ [checkBoxName]: bChecked } as Pick<State, keyof State>);
-  }
+  // private handleCheckBoxChange(
+  //   event: React.ChangeEvent<HTMLInputElement>,
+  //   checkBoxName: keyof State,
+  // ) {
+  //   const bChecked = event.target.checked;
+  //   this.setState({ [checkBoxName]: bChecked } as Pick<State, keyof State>);
+  // }
 
   render() {
     const HOST = defaultEnvironment.Dynamsoft.host;
@@ -139,7 +139,7 @@ export default class DWTScan extends Component<Props, State> {
                         />
                         B&amp;W{" "}
                       </label>
-                      <label htmlFor="Gray" className="lblPixelType">
+                      {/* <label htmlFor="Gray" className="lblPixelType">
                         <input
                           type="radio"
                           id="Gray"
@@ -164,7 +164,7 @@ export default class DWTScan extends Component<Props, State> {
                           onChange={(e) => this.handlePixelTypeChange(e)}
                         />
                         Color
-                      </label>
+                      </label> */}
                     </li>
                     <li>
                       <span>Resolution:</span>
@@ -177,10 +177,10 @@ export default class DWTScan extends Component<Props, State> {
                           this.setState({ Resolution: e.target.value })
                         }
                       >
-                        <option value="100">100</option>
-                        <option value="150">150</option>
+                        {/* <option value="100">100</option>
+                        <option value="150">150</option> */}
                         <option value="200">200</option>
-                        <option value="300">300</option>
+                        {/* <option value="300">300</option> */}
                       </select>
                     </li>
                   </ul>

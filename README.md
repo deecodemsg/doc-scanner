@@ -94,6 +94,8 @@ const DWTApp = React.lazy(() => import('dwt_mfe/App'));
 // render inside a Suspense boundary
 <DWTApp
   showHeader={false}
+  strFileNameWithoutExt={strFileNameWithoutExt} // Passed to DWTApp component for defaulting fileName
+  scannedFileDetails={setScannedFileDetails} // Returned to host as Object { fileName: string, filePath: string }
 />
 ```
 
