@@ -82,11 +82,11 @@ The product key is required for production use of Dynamic Web TWAIN:
 2. If you do not have a TWAIN scanner on hand to test the library, you can download and use a virtual scanner: https://www.dynamsoft.com/web-twain/docs/faq/download-virtual-scanner-for-testing.html
 3. To get more detail on Dynamic-Web-TWAIN Security Features visit https://www.dynamsoft.com/Products/Dynamic-Web-TWAIN-Security-Features.pdf
 
-Useful Dynamic Web TWAIN Documentation Link:
-System Requirements: https://www.dynamsoft.com/web-twain/docs/introduction/system-requirements.html
-UI Customization: https://www.dynamsoft.com/web-twain/docs/extended-usage/ui-customization.html
-Exporting Locally: https://www.dynamsoft.com/web-twain/docs/general-usage/image-export/local-export.html
-Enumerations: https://www.dynamsoft.com/web-twain/docs/info/api/Dynamsoft_Enum.html
+##### Useful Dynamic Web TWAIN Documentation Link:
+- System Requirements: https://www.dynamsoft.com/web-twain/docs/introduction/system-requirements.html
+- UI Customization: https://www.dynamsoft.com/web-twain/docs/extended-usage/ui-customization.html
+- Exporting Locally: https://www.dynamsoft.com/web-twain/docs/general-usage/image-export/local-export.html
+- Enumerations: https://www.dynamsoft.com/web-twain/docs/info/api/Dynamsoft_Enum.html
 
 
 ---
