@@ -484,7 +484,11 @@ export class DwtUIOperations {
         );
     } else if (bSaveToFile) {
       appendStrongMessage("Save Image: ");
-
+      // Convert to base64 to forward to the parent component for api if required.
+      // const base64 = await this.dwtService.getBase64(
+      //               selectedIndices,
+      //               enumImageType,
+      //             );
       if (enumImageType == Dynamsoft.DWT.EnumDWT_ImageType.IT_TIF) {
         if (selectedIndices.length > 1) {
           enumImageType = Dynamsoft.DWT.EnumDWT_ImageType.IT_MULTIPAGE_TIF;
@@ -505,13 +509,9 @@ export class DwtUIOperations {
         )
         .then(
           async (res) => {
-            checkErrorStringWithErrorCode(0, "Successful.");
-            const base64 = await this.dwtService.getBase64(
-              selectedIndices,
-              enumImageType,
-            );
+            checkErrorStringWithErrorCode(0, "Successful.");            
             appendStrongMessage("Saved Folderd detail: " + res.path);
-            return { ...res, base64 };
+            return { ...res };
           },
           (error) =>
             typeof error === "string"

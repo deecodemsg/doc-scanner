@@ -62,6 +62,35 @@ npm run build          # → dist/dwt-mfe.js
 
 ---
 
+## Configuration
+
+The `config` prop (React) accepts these optional `Dynamsoft` keys:
+
+| Key | Type | Default |
+|---|---|---|
+| `host` | `string` | `http://localhost:3000` |
+| `resourcesPath` | `string` | `host + '/Resources'` |
+| `dwtProductKey` | `string` | from `REACT_APP_DWT_PRODUCT_KEY` or empty |
+| `serviceInstallerLocation` | `string` | Dynamsoft CDN |
+| `uploadTargetURL` | `string` | from `REACT_APP_UPLOAD_URL` or demo upload server |
+
+### Dynamsoft product key & security detail
+
+The product key is required for production use of Dynamic Web TWAIN:
+
+1. You can get it from https://www.dynamsoft.com/customer/license/trialLicense?product=dwt and then set it in env `REACT_APP_DWT_PRODUCT_KEY` before building the MFE.
+2. If you do not have a TWAIN scanner on hand to test the library, you can download and use a virtual scanner: https://www.dynamsoft.com/web-twain/docs/faq/download-virtual-scanner-for-testing.html
+3. To get more detail on Dynamic-Web-TWAIN Security Features visit https://www.dynamsoft.com/Products/Dynamic-Web-TWAIN-Security-Features.pdf
+
+Useful Dynamic Web TWAIN Documentation Link:
+System Requirements: https://www.dynamsoft.com/web-twain/docs/introduction/system-requirements.html
+UI Customization: https://www.dynamsoft.com/web-twain/docs/extended-usage/ui-customization.html
+Exporting Locally: https://www.dynamsoft.com/web-twain/docs/general-usage/image-export/local-export.html
+Enumerations: https://www.dynamsoft.com/web-twain/docs/info/api/Dynamsoft_Enum.html
+
+
+---
+
 ## Usage modes
 
 ### Standalone app
@@ -101,37 +130,6 @@ const DWTApp = React.lazy(() => import('dwt_mfe/App'));
 
 > The host app needs the correct remote URL to load `remoteEntry.js` and the
 > exposed component path `dwt_mfe/App`.
-
-## Configuration
-
-The `config` prop (React) accepts these optional `Dynamsoft` keys:
-
-| Key | Type | Default |
-|---|---|---|
-| `host` | `string` | `http://localhost:3000` |
-| `resourcesPath` | `string` | `host + '/Resources'` |
-| `dwtProductKey` | `string` | from `REACT_APP_DWT_PRODUCT_KEY` or empty |
-| `serviceInstallerLocation` | `string` | Dynamsoft CDN |
-| `uploadTargetURL` | `string` | from `REACT_APP_UPLOAD_URL` or demo upload server |
-
-### Dynamsoft product key
-
-The product key is required for production use of Dynamic Web TWAIN:
-You can get it from https://www.dynamsoft.com/customer/license/trialLicense?product=dwt and then
-
-1. Set `REACT_APP_DWT_PRODUCT_KEY` before building the MFE.
-
-### Required host URL
-
-The host app should also provide the `host` URL when the DWT assets are served
-from a different location. This is used to resolve the component CSS and image
-assets, and to construct the default `resourcesPath`.
-
-```tsx
-<DWTApp config={{ host: 'https://my-hosted-mfe.com' }} />
-```
-
----
 
 ## DWT Resources
 
