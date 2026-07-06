@@ -9,7 +9,6 @@ A **Micro Frontend (MFE)** build of the Dynamic Web TWAIN React sample.
 ```
 dwt-mfe/
 ├── src/
-│   ├── index.ts               ← MFE public API (React component + vanilla-JS mount/unmount)
 │   ├── standalone.tsx         ← Entry point for the self-contained standalone app
 │   ├── index.html             ← HTML template for standalone mode
 │   ├── environments/
