@@ -2,7 +2,7 @@ import type { WebTwain } from 'dwt/dist/types/WebTwain';
 import type { DeviceConfiguration, ScanSetup } from 'dwt/dist/types/WebTwain.Acquire';
 import { Subject } from 'rxjs';
 import Dynamsoft from 'dwt';
-import { environment } from '../../environments/environment';
+import { getEffectiveDWTConfig, type DWTEnvironment } from '../../environments/environment';
 import { browserInfo } from './common';
 
 export interface Device {
@@ -23,25 +23,28 @@ export class DwtService {
   protected _fileActualName = '';
   protected _beforeSaveIndex: number = -1;
   protected _containerId: string;
+  protected _config: DWTEnvironment['Dynamsoft'];
 
-  constructor(containerId: string) {
+  constructor(containerId: string, config?: Partial<DWTEnvironment['Dynamsoft']>) {
     this._containerId = containerId;
+    this._config = getEffectiveDWTConfig(config);
   }
 
   init(onReady: (dwtInstance: WebTwain) => void, onError: (err: any) => void): void {
-    Dynamsoft.DWT.ResourcesPath = environment.Dynamsoft.resourcesPath;
-    Dynamsoft.DWT.ProductKey = environment.Dynamsoft.dwtProductKey;
-    Dynamsoft.DWT.ServiceInstallerLocation = environment.Dynamsoft.serviceInstallerLocation;
+    Dynamsoft.DWT.ResourcesPath = this._config.resourcesPath;
+    Dynamsoft.DWT.ProductKey = this._config.dwtProductKey;
+    Dynamsoft.DWT.ServiceInstallerLocation = this._config.serviceInstallerLocation;
 
     Dynamsoft.DWT.CreateDWTObjectEx(
       { WebTwainId: this._containerId },
       (dwtInstance: WebTwain) => {
         this._dwtObject = dwtInstance;
-        this._dwtObject.Addon.PDF.SetReaderOptions({
+        const readerOptions = {
           convertMode: Dynamsoft.DWT.EnumDWT_ConvertMode.CM_RENDERALL,
           renderOptions: { renderAnnotations: true, resolution: 200 },
-          preserveUnmodifiedOnSave: true,
-        });
+        } as any;
+        readerOptions.preserveUnmodifiedOnSave = true;
+        this._dwtObject.Addon.PDF.SetReaderOptions(readerOptions);
         onReady(dwtInstance);
       },
       (err: any) => onError(err),
@@ -255,11 +258,12 @@ export class DwtService {
       Dynamsoft.DWT.EnumDWT_UploadDataFormat.Binary,
       _fileName,
       // SUCCESS CALLBACK
-      (responseStr: string) => {
+      (...args: any[]) => {
+        const responseStr = typeof args[0] === 'string' ? args[0] : '';
         try {
           // Parse the JSON response from your Node.js API
           const data = JSON.parse(responseStr);
-          res(data); 
+          res(data);
         } catch (e) {
           res({ name: _fileName, rawResponse: responseStr });
         }

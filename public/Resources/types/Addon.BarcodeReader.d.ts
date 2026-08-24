@@ -42,7 +42,7 @@ export interface TextResult {
      */
     barcodeFormat: DynamsoftEnumsDBR.EnumBarcodeFormat | number; 
     /**
-     * Extra barcode formats.
+     * Extra barcde formats.
      */
     barcodeFormat_2: DynamsoftEnumsDBR.EnumBarcodeFormat_2 | number;
     /**

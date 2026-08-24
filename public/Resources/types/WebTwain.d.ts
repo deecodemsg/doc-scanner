@@ -3,7 +3,6 @@ import { WebTwainViewer } from "./WebTwain.Viewer";
 import { BarcodeReader } from "./Addon.BarcodeReader";
 import { OCR } from "./Addon.OCR";
 import { OCRPro } from "./Addon.OCRPro";
-import { OCRKit } from "./Addon.OCRKit";
 import { PDF } from "./Addon.PDF";
 import { Webcam } from "./Addon.Webcam";
 
@@ -51,7 +50,6 @@ export interface Addon {
     BarcodeReader: BarcodeReader;
     OCR: OCR;
     OCRPro: OCRPro;
-    OCRKit: OCRKit;
     PDF: PDF;
     Webcam: Webcam;
 }

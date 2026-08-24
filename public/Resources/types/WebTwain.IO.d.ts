@@ -499,7 +499,7 @@ export interface WebTwainIO extends WebTwainUtil {
      * Upload the specified image via a HTTP Post request.
      * @param host The HTTP Host.
      * @param index Specify the image.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param type The format of the file.
      * @param fileName The file name.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
@@ -523,7 +523,7 @@ export interface WebTwainIO extends WebTwainUtil {
      * Upload the specified image via a HTTP Post request.
      * @param host The HTTP Host.
      * @param index Specify the image.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param fileName The file name.
      * @param type The format of the file.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
@@ -547,7 +547,7 @@ export interface WebTwainIO extends WebTwainUtil {
     /**
      * Upload all images in the buffer as a TIFF file via a HTTP Post request.
      * @param host The HTTP Host.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param fileName The file name.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
      * @param onServerReturnedSomething A callback function that is executed if the response is not empty.
@@ -568,7 +568,7 @@ export interface WebTwainIO extends WebTwainUtil {
     /**
      * Upload all images in the buffer as a PDF file via a HTTP Post request.
      * @param host The HTTP Host.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param fileName The file name.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
      * @param onServerReturnedSomething A callback function that is executed if the response is not empty.
@@ -589,7 +589,7 @@ export interface WebTwainIO extends WebTwainUtil {
     /**
      * Upload all selected images in the buffer as a PDF file via a HTTP Post request.
      * @param host The HTTP Host.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param fileName The file name.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
      * @param onServerReturnedSomething A callback function that is executed if the response is not empty.
@@ -610,7 +610,7 @@ export interface WebTwainIO extends WebTwainUtil {
     /**
      * Upload all selected images in the buffer as a TIFF file via a HTTP Post request.
      * @param host The HTTP Host.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param fileName The file name.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
      * @param onServerReturnedSomething A callback function that is executed if the response is not empty.
@@ -632,7 +632,7 @@ export interface WebTwainIO extends WebTwainUtil {
      * Upload the specified file via a HTTP Post request.
      * @param host The HTTP Host.
      * @param path Specify the file to upload.
-     * @param target The target where the request is sent.
+     * @param target The target wherethe request is sent.
      * @param fileName The file name.
      * @param onEmptyResponse A callback function that is executed if the response is empty.
      * @param onServerReturnedSomething A callback function that is executed if the response is not empty.
@@ -770,7 +770,6 @@ export interface WebTwainIO extends WebTwainUtil {
      */
     MaxUploadImageSize: number;
     /**
-     * @deprecated since version 19.3. This property will be removed in future versions. Use function `PrintEx` instead.
      * Export all image data in the buffer to a new browser window and use the browser's built-in print feature to print the image(s).
      * @param useOSPrintWindow Whether to use the print feature of the operating system instead.
      */
@@ -778,9 +777,8 @@ export interface WebTwainIO extends WebTwainUtil {
     /**
      * Export specified image data in the buffer to a new browser window and use the browser's built-in print feature to print the image(s).
      * @argument indices The indices of the converted images.
-     * @argument settings Configure the printing method.
      */
-    PrintEx(indices: number[], settings?: PrintSettings): boolean;
+    PrintEx(indices: number[]): boolean;
 	/**
 	 * @deprecated since version 18.5. This property will be removed in future versions. Use asynchronous function `SaveAsBMP` instead.
      * Save the specified image as a BMP file.
@@ -1136,25 +1134,21 @@ export interface WebTwainIO extends WebTwainUtil {
      * Save image data to LocalStorage.
      * @param Object.uid Unique identifier for the created LocalStorage.
 	 * @param Object.password Ensure that the entered password matches the one inputted when creating LocalStorage in order to successfully save.
-	 * @param Object.indices The index array to be saved. Default to save all images.
-     * @param Object.maxThreads The maximum number of threads to use for the operation.
+	 * @param indices The index array to be saved. Default to save all images.
      */
 	saveToLocalStorage(settings: {
 	  uid: string, 
 	  password?:string,  
-	  indices?:[],
-      maxThreads?: number
+	  indices?:[]
 	}): Promise<string[]>;  
 	/**
      * Load images saved from LocalStorage.
      * @param Object.uid Unique identifier for the created LocalStorage.
 	 * @param Object.password Ensure that the entered password matches the one inputted when creating LocalStorage in order to successfully load images.
-     * @param Object.maxThreads The maximum number of threads to use for the operation.
      */
 	loadFromLocalStorage (settings: {
 	  uid: string,
 	  password?:string,
-      maxThreads?: number
 	}) : Promise<{oriImageId:string, newImageId: string}[]>; // uid is returned from 
 	/**
      * Delete the saved LocalStorage.
@@ -1200,8 +1194,4 @@ export interface MetaData{
   bitDepth: number;
   resolutionX: number;
   resolutionY: number;
-}
-export interface PrintSettings{
-  mode?: string;  //'browser' | 'os'
-  osPrintOptions?: { showPrintDialog?: boolean; };  
 }

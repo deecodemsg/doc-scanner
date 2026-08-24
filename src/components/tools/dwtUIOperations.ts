@@ -6,7 +6,7 @@ import type {
   ViewMode,
 } from "dwt/dist/types/WebTwain.Viewer";
 import type { WebTwain } from "dwt/dist/types/WebTwain";
-import { environment as defaultEnvironment } from "../../environments/environment";
+import { getEffectiveDWTConfig, type DWTEnvironment } from "../../environments/environment";
 
 import {
   getEl,
@@ -25,7 +25,6 @@ import { Subscription } from "rxjs";
 
 let _arrMessages: string[] = []; // Store the temp string for display
 let _iLeft: number, _iTop: number, _iRight: number, _iBottom: number; //These variables are used to remember the selected area
-const HOST = defaultEnvironment.Dynamsoft.host;
 export class DwtUIOperations {
   protected dwtService: DwtService;
   protected dwtObject?: WebTwain;
@@ -34,13 +33,32 @@ export class DwtUIOperations {
   protected generalSubscription?: Subscription;
   protected containerId: string;
   protected editorShown = false;
+  protected config: DWTEnvironment["Dynamsoft"];
+  protected isInitialized = false;
 
-  constructor(containerId: string) {
+  constructor(containerId: string, config?: Partial<DWTEnvironment["Dynamsoft"]>) {
     this.containerId = containerId;
-    this.dwtService = new DwtService(containerId);
+    console.log(`[DwtUIOperations] Constructor called for containerId: ${containerId}`);
+    this.config = getEffectiveDWTConfig(config);
+    this.dwtService = new DwtService(containerId, this.config);
+  }
+
+  /**
+   * Get the container ID for this DWT instance.
+   * Used by App.tsx to track instances in the registry.
+   */
+  getContainerId(): string {
+    return this.containerId;
   }
 
   onPageInit() {
+    // Guard against multiple initializations when component re-renders in host MFE
+    if (this.isInitialized) {
+      console.warn(`DwtUIOperations already initialized for container: ${this.containerId}`);
+      return;
+    }
+    this.isInitialized = true;
+
     initiateInputs();
     hideLoadImageForLinux();
     initStyle();
@@ -100,6 +118,7 @@ export class DwtUIOperations {
   }
 
   destroy() {
+    this.isInitialized = false;
     this.unBindViewer();
     this.generalSubscription?.unsubscribe();
     this.bufferSubscription?.unsubscribe();
@@ -111,9 +130,37 @@ export class DwtUIOperations {
   bindViewer() {
     if (!this.dwtObject) return;
 
-    this.dwtObject.Viewer.bind(
-      <HTMLDivElement>document.getElementById(this.containerId),
-    );
+    const containerEl = <HTMLDivElement>document.getElementById(this.containerId);
+    this.dwtObject.Viewer.bind(containerEl);
+    
+    // Ensure container has proper sizing for host app compatibility
+    if (containerEl) {
+      containerEl.style.width = "100%";
+      containerEl.style.height = "600px";
+      containerEl.style.minHeight = "600px";
+      containerEl.style.overflow = "hidden";
+      containerEl.style.background = "#F5F5F5";
+    }
+    
+    // Ensure viewer main container has proper height
+    setTimeout(() => {
+      const viewerMain = document.querySelector(
+        `#${this.containerId} .dvs-viewer-main`,
+      ) as HTMLElement;
+      if (viewerMain) {
+        viewerMain.style.height = "100%";
+        viewerMain.style.width = "100%";
+      }
+      
+      const canvasContainer = document.querySelector(
+        `#${this.containerId} .dvs-canvas-container`,
+      ) as HTMLElement;
+      if (canvasContainer) {
+        canvasContainer.style.height = "100%";
+        canvasContainer.style.width = "100%";
+      }
+    }, 100);
+
     this.dwtObject.Viewer.pageMargin = 10;
     this.updateViewer();
 
@@ -523,10 +570,20 @@ export class DwtUIOperations {
 
   // acquire image
   acquireImage(deviceName: any, scanOptions: any) {
+    const normalizedScanOptions = {
+      ...(scanOptions || {}),
+      PixelType: Number(scanOptions?.PixelType ?? 0),
+      Resolution: Number(scanOptions?.Resolution ?? 200),
+      IfShowUI: Boolean(scanOptions?.IfShowUI),
+      IfFeederEnabled: Boolean(scanOptions?.IfFeederEnabled),
+      IfAutoDiscardBlankpages: Boolean(scanOptions?.IfAutoDiscardBlankpages),
+      IfDuplexEnabled: Boolean(scanOptions?.IfDuplexEnabled),
+    };
+
     this.dwtService
       .selectADevice(deviceName)
       .then(() => {
-        return this.dwtService.acquire(scanOptions);
+        return this.dwtService.acquire(normalizedScanOptions);
       })
       .then(
         () => {
@@ -688,8 +745,9 @@ export class DwtUIOperations {
           ".dvs-viewer-main .dvs-scroll-container",
         ) as HTMLElement;
         if (scrollEl) {
+          const host = this.config.host;
           scrollEl.style.background =
-            `url('${HOST}/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5`;
+            `url('${host}/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5`;
         }
       }
     }
@@ -796,8 +854,9 @@ export class DwtUIOperations {
     if (Dynamsoft.Lib.detect.ssl == true)
       _strPort = location.port == "" ? 443 : parseInt(location.port);
     this.dwtObject.HTTPPort = _strPort;
+    const host = this.config.host;
     let strDownloadFile =
-      `${HOST}/assets/Images/DynamsoftSample.pdf`;
+      `${host}/assets/Images/DynamsoftSample.pdf`;
 
     this.dwtObject?.HTTPDownload(
       location.hostname,
@@ -895,7 +954,7 @@ export class DwtUIOperations {
         ) as HTMLElement;
         if (scrollEl) {
           scrollEl.style.background =
-            `url('${HOST}/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5`;
+            `url('${this.config.host}/assets/Images/canvasbackground.png') center / 60% no-repeat,#F5F5F5`;
         }
         dynamicWebTWAINInstance.Viewer.background = "";
         thumbnailViewer.background = "#F5F5F5";
