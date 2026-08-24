@@ -33,10 +33,6 @@ export interface WebTwainBuffer extends WebTwainIO {
      */
     FilterImagesByTag(tag: string): boolean;
     /**
-     * Stop filtering images by tag. 
-     */
-    ClearFilter(): boolean;
-    /**
      * Return the pixel bit depth of the specified image.
      * @param index Specify the image.
      */
@@ -214,7 +210,7 @@ export interface WebTwainBuffer extends WebTwainIO {
      * @param index Specify the image.
      */
 	IsBlankImageAsync(index: number, options?: {
-		minBlockHeight?: number,//default value: 20
+		minBlockHeight?: number,//default value: 10
 		maxBlockHeight?: number   //default value: 30
 	}): Promise < boolean > ;
     /**
