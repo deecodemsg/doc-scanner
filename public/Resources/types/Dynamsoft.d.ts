@@ -276,12 +276,12 @@ export interface DWTPro {
      */
     DeleteDWTObject(Id: string): boolean;
     /**
-     * Return the WebTwain instance specified by its ContainerId or WebTwainId. If no parameter is provided, the first valid WebTwain instance is returnd.
+     * Return the WebTwain instance specified by its ContainerId or WebTwainId. If no parameter is provided, the first valid WebTwain instance is returned.
      * @param ContainerIdOrWebTwainId The ContainerId or WebTwainId.
      */
     GetWebTwain(ContainerIdOrWebTwainId?: string): WebTwain;
     /**
-     * Return the WebTwain instance specified by its ContainerId or WebTwainId. If no parameter is provided, the first valid WebTwain instance is returnd.
+     * Return the WebTwain instance specified by its ContainerId or WebTwainId. If no parameter is provided, the first valid WebTwain instance is returned.
      * @param ContainerIdOrWebTwainId The ContainerId or WebTwainId.
      */
     GetWebTwainEx(ContainerIdOrWebTwainId?: string): WebTwain;
@@ -390,7 +390,7 @@ export interface DWTPro {
      * @param event Specify the event.
      * @param callback Specify the callback.
      */
-    RegisterEvent(event: string, callback: (...args: any[]) => void): boolean;
+    RegisterEvent(event: string, callback: (...args: any[]) => void): void;
     /**
      * Remove all authorizations for accessing local resources.
      */
@@ -487,6 +487,11 @@ export interface DWTPro {
 	 * Whether to check certificates issue in detail, default value is true.
      */
 	IfCheckCert: boolean;
+    /**
+     * Dynamsoft.DWT.EnableLocalNetworkMixedContent 
+	 * If enabled, the library will use HTTP to communicate with the service. The host must be localhost or 127.0.0.1. The default value is false.
+     */
+    EnableLocalNetworkMixedContent: boolean;
 }
 export interface DisplayInfo {
     loaderBarSource?: string;
@@ -576,6 +581,9 @@ export interface DWTInstall {
 	OnLTSPublicLicenseWarning?: (message?: string) => void;
 	OnLicenseExpiredWarning?: (...arg: any[]) => void;
 	OnLicenseError?: (message?: string, errorCode?: number) => void;
+	OnCorsConfigError?: (message?: string) => void;
+	OnBrowserLNADenied?: (message?: string, bReturnToInstallDialog?: boolean, bPromptPermisstion?: boolean) => void;
+	OnProcessLicenseErrorContent?: (content?: string) => void;
 }
 declare const Dynamsoft: (DWTInstall & typeof DynamsoftStatic);
 //declare const Dynamsoft: (typeof DynamsoftStatic);

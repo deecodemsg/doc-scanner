@@ -33,6 +33,11 @@ export interface PDF {
      */
     IsTextBasedPDF(path: string): boolean;
     /**
+     * Detect whether the local PDF file requires rasterization to be read.
+     * @path Specify the path of the PDF file.
+     */
+    IsRasterizationRequired(path: string): boolean;
+    /**
 	 * @deprecated since version 18.4. This function will be removed in future versions. Use `SetReaderOptions` instead.
      * Set the convert mode.
      * @param mode Specify the mode.
@@ -131,30 +136,13 @@ export interface PDFWSettings {
      */
     quality?: number;
 	/**
-     * Reduce the file size when saving the image(s) as a PDF file. 
-     */
-	docCompressor?:{ //18.3
-		/**
-		 * Enabled document compressor.
-		 */
-		enabled: boolean;
-		 /**
-		 * sensitivity
-		 * The value ranges from 1 to 100. Default value is 50.
-		 * Only valid when the {compression} is 'JPEG' or 'JPEG2000'.
-		 */
-		sensitivity?: number;
-		/**
-		 * compressLevel
-		 * The value ranges from 0 to 100. Default value is 50.
-		 * Only valid when the {compression} is 'JPEG' or 'JPEG2000'.
-		 */
-		compressLevel?: number;
-	}
-	/**
      * When saving a PDF, you can set a password for protection.
      */
 	password?: string;
+    /**
+     * Specify the PDFA version. For example, 'pdf/a-1b', "pdf/a-2b" or "pdf/a-3b".
+     */
+    pdfaVersion?: string; 
 }
 export interface ReaderOptions {
     /**
@@ -186,6 +174,9 @@ export interface ReaderOptions {
          * Whether or not to render in grayscale. Default value: false.
          */
 		renderGrayscale?: boolean; 
-    }
-	
+    }; 
+    /**
+     * Set whether to preserve the original size when saving an unedited PDF. Default value: false.
+     */
+    preserveUnmodifiedOnSave?: boolean;   
 }
