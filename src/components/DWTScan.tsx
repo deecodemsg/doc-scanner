@@ -6,7 +6,6 @@ import { environment as defaultEnvironment } from "../environments/environment";
 
 interface Props {
   dwtUtil: DwtUIOperations;
-  host?: string;
 }
 
 interface State {
@@ -48,7 +47,7 @@ export default class DWTScan extends Component<Props, State> {
   // }
 
   render() {
-    const host = defaultEnvironment.Dynamsoft.host;
+    const HOST = defaultEnvironment.Dynamsoft.host;
     const { dwtUtil } = this.props;
     const {
       IfShowUI,
@@ -194,14 +193,7 @@ export default class DWTScan extends Component<Props, State> {
                     value="Scan"
                     onClick={() => {
                       const sourceEl = getSelectEl("source");
-                      dwtUtil.acquireImage(sourceEl?.value, {
-                        IfShowUI: this.state.IfShowUI,
-                        IfFeederEnabled: this.state.IfFeederEnabled,
-                        IfAutoDiscardBlankpages: this.state.IfAutoDiscardBlankpages,
-                        IfDuplexEnabled: this.state.IfDuplexEnabled,
-                        PixelType: Number(this.state.PixelType),
-                        Resolution: Number(this.state.Resolution),
-                      });
+                      dwtUtil.acquireImage(sourceEl?.value, this.state);
                     }}
                   />
                   <a
@@ -218,15 +210,15 @@ export default class DWTScan extends Component<Props, State> {
                 <a href="#" className="ClosetblLoadImage">
                   <img
                     className="imgClose"
-                    src={host + '/assets/Images/Close.png'}
+                    src={HOST+'/assets/Images/Close.png'}
                     alt="Close tblLoadImage"
                   />
                 </a>
                 <img
-                  src={host + '/assets/Images/Warning.png'}
+                  src={HOST+'/assets/Images/Warning.png'}
                   alt="Warning"
                 />
-                <span className="spanContent">
+                {/* <span className="spanContent">
                   <p className="contentTitle">
                     No TWAIN compatible drivers detected
                   </p>
@@ -256,7 +248,7 @@ export default class DWTScan extends Component<Props, State> {
                       TWG
                     </a>
                   </p>
-                </span>
+                </span> */}
               </div>
             </div>
           </li>

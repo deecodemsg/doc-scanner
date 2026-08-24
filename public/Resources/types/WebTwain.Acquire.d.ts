@@ -1,6 +1,7 @@
 import { DynamsoftEnumsDWT } from "./Dynamsoft.Enum";
 import { WebTwainEdit } from "./WebTwain.Edit";
 import { WebTwain } from "./WebTwain";
+import { OutputInfo } from "./WebTwain.Util";
 
 export interface WebTwainAcquire extends WebTwainEdit {
     /**
@@ -356,6 +357,10 @@ export interface WebTwainAcquire extends WebTwainEdit {
      */
     readonly ImageLayoutFrameTop: number;
     /**
+     * Return the frame number of the current image.
+     */
+    readonly ImageLayoutFrameNumber: number;
+    /**
      * Return the document number of the current image.
      */
     readonly ImageLayoutDocumentNumber: number;
@@ -689,11 +694,11 @@ export interface DeviceConfiguration {
      */
     IfDuplexEnabled?: boolean;
     /**
-     * Whether to close the built-in User Interface after aquisition. Only valid when {IfShowUI} is true.
+     * Whether to close the built-in User Interface after acquisition. Only valid when {IfShowUI} is true.
      */
     IfDisableSourceAfterAcquire?: boolean;
     /**
-     * Whether to close source after aquisition.
+     * Whether to close source after acquisition.
      */
 	IfCloseSourceAfterAcquire?:boolean;
     /**
@@ -771,7 +776,7 @@ export interface ScanSetup {
      */
     setupId?: string;
     /**
-     * Whether to ignore or fail the acquistion when an exception is raised. Set "ignore" or "fail".
+     * Whether to ignore or fail the acquisition when an exception is raised. Set "ignore" or "fail".
      */
     exception?: string;
     /**
@@ -1025,7 +1030,8 @@ export interface Status {
     bScanCompleted?: boolean;
     event?: string;
     result?: {
-        currentPageNum?: number
+        currentPageNum?: number;
+        outputInfo?: OutputInfo;   
     };
 }
 export interface TiffTag {
