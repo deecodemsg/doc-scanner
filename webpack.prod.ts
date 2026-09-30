@@ -6,7 +6,14 @@ import baseConfig from "./webpack.base";
 
 dotenv.config();
 
-const HOST = process.env.REACT_APP_HOST || "http://localhost:3000";
+/**
+ * HOST can be:
+ * 1. Set via REACT_APP_HOST env var (will be compiled into the app)
+ * 2. Auto-detected at runtime from window.location (if not set)
+ * Default: localhost:3000
+ */
+const ENV_HOST = process.env.REACT_APP_HOST;
+const HOST = ENV_HOST || "http://localhost:3000";
 const DWT_PRODUCT_KEY = process.env.REACT_APP_DWT_PRODUCT_KEY || '';
 const UPLOAD_URL = process.env.REACT_APP_UPLOAD_URL || `${HOST}/api/upload`;
 
@@ -48,7 +55,8 @@ const config: Configuration = {
       },
     }),
     new webpack.DefinePlugin({
-      "process.env.REACT_APP_HOST": JSON.stringify(HOST),
+      // If REACT_APP_HOST not explicitly set, pass empty string to allow runtime detection
+      "process.env.REACT_APP_HOST": JSON.stringify(ENV_HOST || ''),
       "process.env.REACT_APP_DWT_PRODUCT_KEY": JSON.stringify(DWT_PRODUCT_KEY),
       "process.env.REACT_APP_UPLOAD_URL": JSON.stringify(UPLOAD_URL),
     }),

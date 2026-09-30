@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: doc-scanner
+  namespace: default
+  labels:
+    app: doc-scanner
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: doc-scanner.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: doc-scanner
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - doc-scanner.example.com
+      secretName: doc-scanner-tls

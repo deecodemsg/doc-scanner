@@ -1,0 +1,17 @@
+apiVersion: v2
+name: doc-scanner
+description: A Helm chart for DynamicWebTWAIN React MFE - Document Scanner
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - document-scanner
+  - twain
+  - micro-frontend
+  - react
+home: https://github.com/your-org/doc-scanner
+sources:
+  - https://github.com/your-org/doc-scanner
+maintainers:
+  - name: Your Name
+    email: your.email@example.com

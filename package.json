@@ -12,9 +12,13 @@
     }
   },
   "scripts": {
+    "clean": "rmdir /s node_modules dist coverage build && del /f ./package-lock.json && npm cache clean --force",
+    "clean:resources": "node scripts/clean-resources.js",
     "start": "webpack serve --config webpack.dev.ts",
     "build": "webpack --config webpack.prod.ts",
-    "copy-dwt": "ncp node_modules/dwt/dist public/Resources",
+    "copy-dwt": "node scripts/copy-dwt.js",
+    "copy-dwt:verbose": "node scripts/copy-dwt.js --verbose",
+    "copy-dwt:force": "npm run clean:resources && npm run copy-dwt",
     "preview:prod": "npm run build && serve dist",
     "prebuild": "npm run copy-dwt",
     "prestart": "npm run copy-dwt",
@@ -32,7 +36,7 @@
   },
   "dependencies": {
     "dotenv": "^17.4.2",
-    "dwt": "19.4.0",
+    "dwt": "19.4.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-helmet": "^6.1.0",

@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  doc-scanner:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: doc-scanner
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - doc-scanner-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add reverse proxy for HTTPS
+  # nginx-proxy:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+  #     - ./certs:/etc/nginx/certs:ro
+  #   depends_on:
+  #     - doc-scanner
+  #   networks:
+  #     - doc-scanner-network
+
+networks:
+  doc-scanner-network:
+    driver: bridge

@@ -64,8 +64,52 @@ export class DwtService {
             deviceInfo: dev,
           });
         }
-        res(this._devices);
+
+        // Additionally fetch Webcam add-on sources (CZUR, USB cameras, etc.)
+        this._fetchWebcamSources()
+          .then((webcamSources) => {
+            // Merge webcam sources with existing devices
+            this._devices.push(...webcamSources);
+            res(this._devices);
+          })
+          .catch((error) => {
+            console.warn('Webcam sources fetch failed:', error);
+            // Return existing devices even if webcam fetch fails
+            res(this._devices);
+          });
       }).catch((exp: any) => rej(exp.message));
+    });
+  }
+
+  private _fetchWebcamSources(): Promise<Device[]> {
+    return new Promise((res, rej) => {
+      if (!this._dwtObject?.Addon?.Webcam) {
+        res([]);
+        return;
+      }
+
+      try {
+        // Get webcam sources from the Webcam add-on module
+        const sourceList = this._dwtObject.Addon.Webcam.GetSourceList() as any[];
+        const webcamDevices: Device[] = [];
+
+        if (sourceList && sourceList.length > 0) {
+          for (let i = 0; i < sourceList.length; i++) {
+            const source = sourceList[i];
+            webcamDevices.push({
+              deviceId: Math.floor(Math.random() * 100000).toString(),
+              name: source.sourceId || `Webcam_${i}`,
+              label: source.sourceName || `Webcam ${i + 1}`,
+              deviceInfo: source,
+            });
+          }
+        }
+
+        res(webcamDevices);
+      } catch (error) {
+        console.warn('Webcam add-on not available:', error);
+        rej(error);
+      }
     });
   }
 
@@ -84,11 +128,26 @@ export class DwtService {
           const _scannersCount = this._devices.length;
           waitForAnotherPromise = true;
           if (index <= _scannersCount - 1) {
-            this._dwtObject?.SelectDeviceAsync(value.deviceInfo).then(() => {
-              this._selectedDevice = name;
-              this.generalSubject.next({ type: 'deviceName', deviceName: this._selectedDevice });
-              res(true);
-            }).catch((exp: any) => rej(exp.message));
+            // Check if this is a webcam device
+            const isWebcamDevice = this._isWebcamDevice(value);
+
+            if (isWebcamDevice) {
+              // Handle webcam device selection
+              this._selectWebcamDevice(value)
+                .then(() => {
+                  this._selectedDevice = name;
+                  this.generalSubject.next({ type: 'deviceName', deviceName: this._selectedDevice });
+                  res(true);
+                })
+                .catch((exp: any) => rej(exp.message));
+            } else {
+              // Handle standard TWAIN device selection
+              this._dwtObject?.SelectDeviceAsync(value.deviceInfo).then(() => {
+                this._selectedDevice = name;
+                this.generalSubject.next({ type: 'deviceName', deviceName: this._selectedDevice });
+                res(true);
+              }).catch((exp: any) => rej(exp.message));
+            }
           }
         }
       });
@@ -104,27 +163,93 @@ export class DwtService {
     });
   }
 
+  private _isWebcamDevice(device: Device): boolean {
+    // Check if device is from webcam add-on
+    return device.name.startsWith('Webcam_') ||
+           (device.deviceInfo && device.deviceInfo.sourceId !== undefined);
+  }
+
+  private _selectWebcamDevice(device: Device): Promise<void> {
+    return new Promise((res, rej) => {
+      if (!this._dwtObject?.Addon?.Webcam) {
+        rej('Webcam add-on not available');
+        return;
+      }
+
+      try {
+        // Select the webcam source using the Webcam add-on
+        Promise.resolve(this._dwtObject.Addon.Webcam.SelectSource(device.deviceInfo.sourceId))
+          .then(() => {
+            this._selectedDevice = device.name;
+            res();
+          })
+          .catch((error: any) => {
+            console.error('Failed to select webcam device:', error);
+            rej(error);
+          });
+      } catch (error) {
+        rej(error);
+      }
+    });
+  }
+
   acquire(config?: DeviceConfiguration | ScanSetup, bAdvanced?: boolean): Promise<any> {
     return new Promise((res, rej) => {
       if (this._selectedDevice !== '') {
         this._dwtObject?.SetOpenSourceTimeout(3000);
-        if (bAdvanced) {
-          if (this._dwtObject?.OpenSource()) {
-            this._dwtObject?.startScan(config as ScanSetup);
-          } else {
-            rej(this._dwtObject?.ErrorString);
-          }
-        } else {
-          this._dwtObject?.AcquireImageAsync(config as DeviceConfiguration)
-            .then(() => this._dwtObject?.CloseSourceAsync())
-            .then(() => {
-              this._dwtObject?.CloseWorkingProcess();
-              res(true);
-            })
+
+        // Check if selected device is a webcam
+        const selectedDevice = this._devices.find(d => d.name === this._selectedDevice);
+        const isWebcam = selectedDevice ? this._isWebcamDevice(selectedDevice) : false;
+
+        if (isWebcam) {
+          // Handle webcam acquisition
+          this._acquireFromWebcam(config as DeviceConfiguration)
+            .then(() => res(true))
             .catch((exp: any) => rej(exp.message));
+        } else {
+          // Handle TWAIN device acquisition
+          if (bAdvanced) {
+            if (this._dwtObject?.OpenSource()) {
+              this._dwtObject?.startScan(config as ScanSetup);
+            } else {
+              rej(this._dwtObject?.ErrorString);
+            }
+          } else {
+            this._dwtObject?.AcquireImageAsync(config as DeviceConfiguration)
+              .then(() => this._dwtObject?.CloseSourceAsync())
+              .then(() => {
+                this._dwtObject?.CloseWorkingProcess();
+                res(true);
+              })
+              .catch((exp: any) => rej(exp.message));
+          }
         }
       } else {
         rej('Please select a device first!');
+      }
+    });
+  }
+
+  private _acquireFromWebcam(config?: DeviceConfiguration): Promise<any> {
+    return new Promise((res, rej) => {
+      if (!this._dwtObject?.Addon?.Webcam) {
+        rej('Webcam add-on not available');
+        return;
+      }
+
+      try {
+        // Acquire image from selected webcam device
+        this._dwtObject.Addon.Webcam.CaptureImage(
+          () => res(true),
+          (errorCode: number, errorString: string) => {
+            const error = errorString || `Webcam capture failed (${errorCode})`;
+            console.error('Failed to acquire image from webcam:', error);
+            rej(error);
+          },
+        );
+      } catch (error) {
+        rej(error);
       }
     });
   }
@@ -255,14 +380,8 @@ export class DwtService {
       Dynamsoft.DWT.EnumDWT_UploadDataFormat.Binary,
       _fileName,
       // SUCCESS CALLBACK
-      (responseStr: string) => {
-        try {
-          // Parse the JSON response from your Node.js API
-          const data = JSON.parse(responseStr);
-          res(data); 
-        } catch (e) {
-          res({ name: _fileName, rawResponse: responseStr });
-        }
+      () => {
+        res({ name: _fileName });
       },
       // ERROR CALLBACK
       (errCode: number, errString: string, responseStr: string) => {
