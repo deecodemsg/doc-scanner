@@ -1,0 +1,9 @@
+1. Open the file dynamsoft.webtwain.config.js from your local project. If you cannot locate the JS file in your project, please search for "ProductKey" to locate the code for license setting.
+
+2. Set the new key via the API ProductKey.
+
+Dynamsoft.DWT.ProductKey = "t0198EQYAAJcTc9VwZUfTc84n0Ro4VUrij4v0AfB1PI7waXfVYEY8bjodf7lofkCj93fPsUT9VHLP8gq5zGZCa6ks0CCBTEl152QHp7Z3qrR3ooOTj5wi0/46xtM2+7xtAgMw74Ae1+EAkANxLSdgsd/RO0MCsAZoBdDaGlADirvwxWdevO3zWtP/DrTkZAentnfmAWnjRAcnHzl9QNwo5u13u8aAIL85CcAaoEUAvx/ZJSByBlgDtAgspxQzAWSiUyejfgAXHT5c"
+
+3. Refresh your scan page and try again.
+
+The license is valid till November 21, 2026.
