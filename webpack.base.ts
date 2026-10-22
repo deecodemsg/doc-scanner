@@ -1,6 +1,9 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
-import { Configuration } from 'webpack';
+import type { Configuration } from 'webpack';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const baseConfig: Configuration = {
   resolve: {

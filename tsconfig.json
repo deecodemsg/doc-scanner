@@ -1,19 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "jsx": "react",
     "strict": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true,
     "skipLibCheck": true,
     "outDir": "./dist/types",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "resolveJsonModule": true,
     "lib": ["ES2018", "DOM", "DOM.Iterable"]
   },

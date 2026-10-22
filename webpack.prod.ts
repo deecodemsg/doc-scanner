@@ -1,10 +1,14 @@
 import path from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
-import webpack, { Configuration } from "webpack";
+import webpack from "webpack";
+import type { Configuration } from "webpack";
 import dotenv from "dotenv";
-import baseConfig from "./webpack.base";
+import baseConfig from "./webpack.base.ts";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * HOST can be:

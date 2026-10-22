@@ -112,17 +112,16 @@ export class DwtUIOperations {
     if (!this.dwtObject) return;
 
     this.dwtObject.Viewer.bind(
-      <HTMLDivElement>document.getElementById(this.containerId),
+      document.getElementById(this.containerId) as HTMLDivElement,
     );
     this.dwtObject.Viewer.pageMargin = 10;
     this.updateViewer();
 
     if (this.thumbnail) {
-      // Remove the context menu which is still not functioning correctly.
       this.dwtObject.Viewer.off("imageRightClick");
       this.dwtObject.Viewer.cursor = "crosshair";
       this.dwtObject.Viewer.showPageNumber = true;
-      this.thumbnail.updateViewMode(<ViewMode>{ columns: 1, rows: 3 });
+      this.thumbnail.updateViewMode({ columns: 1, rows: 3 } as ViewMode);
       this.thumbnail.on("click", (evt) => {
         this.handleOnMouseClick(evt);
       });
@@ -159,9 +158,9 @@ export class DwtUIOperations {
 
   updateViewer() {
     if (this.dwtObject) {
-      this.thumbnail = this.dwtObject?.Viewer.createThumbnailViewer(<
-        ThumbnailViewerSettings
-      >{ size: "25%" });
+      this.thumbnail = this.dwtObject?.Viewer.createThumbnailViewer({
+        size: "25%",
+      } as ThumbnailViewerSettings);
       this.dwtObject.Viewer.width = "100%";
       this.dwtObject.Viewer.height = "100%";
       this.dwtObject.Viewer.show();
