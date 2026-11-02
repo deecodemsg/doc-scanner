@@ -1,0 +1,30 @@
+{{- if eq (include "autoscaling.enabled" .) "true" }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ default (include "dwt-mfe.fullname" .) .Values.autoscaling.scaled_object_name }}
+  labels:
+    {{- include "dwt-mfe.labels" . | nindent 4 }}
+  {{- if .Values.autoscaling.scaled_object_annotations }}
+  annotations:
+    {{- toYaml .Values.autoscaling.scaled_object_annotations | nindent 4 }}
+  {{- end }}
+spec:
+  minReplicaCount: {{ .Values.autoscaling.minReplicas }}
+  maxReplicaCount: {{ .Values.autoscaling.maxReplicas }}
+  pollingInterval: {{ .Values.autoscaling.pollingInterval }}
+  cooldownPeriod: {{ .Values.autoscaling.cooldownPeriod }}
+  {{- if .Values.autoscaling.idleReplicaCount }}
+  idleReplicaCount: {{ .Values.autoscaling.idleReplicaCount }}
+  {{- end }}
+  {{- if .Values.autoscaling.fallback }}
+  fallback:
+    {{- tpl (toYaml .Values.autoscaling.fallback) . | nindent 4 }}
+  {{- end }}
+  scaleTargetRef:
+    name: {{ include "dwt-mfe.fullname" . }}
+  advanced:
+    {{- tpl (toYaml .Values.autoscaling.advanced) . | nindent 4 }}
+  triggers:
+    {{- tpl (toYaml .Values.autoscaling.triggers) . | nindent 4 }}
+{{- end }}

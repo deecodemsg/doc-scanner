@@ -1,0 +1,16 @@
+{{- if and .Values.triggerAuthentication .Values.triggerAuthentication.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ .Values.triggerAuthentication.name }}
+  namespace: {{ .Values.triggerAuthentication.namespace }}
+spec:
+{{- if and .Values.triggerAuthentication.podIdentity .Values.triggerAuthentication.podIdentity.enabled }}
+  podIdentity:
+{{ tpl (toYaml .Values.triggerAuthentication.podIdentity | indent 4) . }}
+{{- end }}
+{{- if and .Values.triggerAuthentication.secret .Values.triggerAuthentication.secret.enabled }}
+  secretTargetRef:
+{{ tpl (toYaml .Values.triggerAuthentication.secret.items | indent 4) . }}
+{{- end }}
+{{- end }}

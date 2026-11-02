@@ -1,0 +1,19 @@
+{{- if and .Values.dapr .Values.dapr.resiliencies .Values.dapr.resiliencies.resources }}
+{{- range $resourceName, $resourceData := .Values.dapr.resiliencies.resources }}
+{{- if $resourceData.enabled }}
+---
+apiVersion: {{ default "dapr.io/v1alpha1" $.Values.dapr.resiliencies.apiVersion }}
+kind: Resiliency
+metadata:
+  name: {{ $resourceName }}
+  {{- with $resourceData.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+scopes:
+  {{- toYaml $resourceData.scopes | nindent 2 }}
+spec:
+  {{- toYaml $resourceData.spec | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

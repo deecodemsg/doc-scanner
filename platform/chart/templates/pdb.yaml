@@ -1,0 +1,11 @@
+{{- if and .Values.pdb .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dwt-mfe.fullname" . }}
+spec:
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "dwt-mfe.selectorLabels" . | nindent 6 }}
+{{- end }}

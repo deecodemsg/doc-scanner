@@ -1,0 +1,16 @@
+{{- if and .Values.configMap .Values.configMap.enabled }}
+{{- $result := dict }}
+{{- if .Values.global.env }}
+  {{- $result = merge .Values.dwtmfe.env .Values.global.env }}
+{{- else }}
+  {{- $result = .Values.dwtmfe.env }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dwt_mfe.fullname" . }}-configmap
+data:
+  {{- range $key, $val := merge $result .Values.configMap.additionalData }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}
+{{- end }}

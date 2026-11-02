@@ -1,0 +1,36 @@
+{{- if and .Values.dapr .Values.dapr.components .Values.dapr.components.pubsub .Values.dapr.components.pubsub.kafka .Values.dapr.components.pubsub.kafka.resources }}
+{{- range $resourceName, $resourceData := .Values.dapr.components.pubsub.kafka.resources }}
+{{- $kafkaBroker := default $.Values.global.kafkaBrokers $resourceData.metadata.brokers }}
+{{- if $resourceData.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ $resourceName }}
+{{- if $resourceData.scopes }}
+scopes:
+  {{- toYaml $resourceData.scopes | nindent 2 }}
+{{- end }}
+spec:
+  type: pubsub.kafka
+  version: {{ default "v1" $.Values.dapr.components.pubsub.kafka.version }}
+  metadata:
+    - name: brokers
+      value: {{ $kafkaBroker }}
+    {{- range $key, $value := $resourceData.metadata }}
+    {{- if ne $key "brokers"}}
+    - name: {{ $key }}
+      {{- if kindIs "map" $value }}
+      {{- toYaml $value | nindent 6 }}
+      {{- else }}
+      value: {{ $value }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+{{- if $resourceData.secretStore }}
+auth:
+  secretStore: {{ tpl (toYaml $resourceData.secretStore) $ }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

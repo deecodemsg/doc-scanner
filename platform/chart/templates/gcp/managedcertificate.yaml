@@ -1,0 +1,14 @@
+{{- if and .Values.managedCertificate .Values.managedCertificate.enabled .Values.managedCertificate.certificates (eq .Values.global.cloud_provider "gcp") }}
+{{- range .Values.managedCertificate.certificates }}
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ .name }}
+spec:
+  {{- with .domains }}
+  domains:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

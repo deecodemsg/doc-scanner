@@ -1,0 +1,12 @@
+{{- if eq .Values.global.cloud_provider "gcp" }}
+{{- if and .Values.backendConfig .Values.backendConfig.enabled }}
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ .Values.backendConfig.name }}
+  labels:
+  {{- include "dwt-mfe.labels" . | nindent 4 }}
+spec:
+  {{- toYaml .Values.backendConfig.spec | nindent 2 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,48 @@
+{{- if and .Values.ingress .Values.ingress.enabled }}
+{{- $serviceName := include "dwt_mfes.fullname" . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "dwt_mfes.fullname" . }}
+  annotations:
+  {{- if .Values.ingress.annotations }}
+  {{- toYaml .Values.ingress.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+  {{- if .Values.ingress.labels }}
+  {{- toYaml .Values.ingress.labels | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.defaultBackend }}
+  defaultBackend:
+    {{- toYaml .Values.ingress.defaultBackend | nindent 4 }}
+  {{- end }}
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+  {{- range .Values.ingress.rules }}
+  - http:
+      paths:
+      {{- range .paths }}
+      - path: {{ default "/" .path | quote }}
+        pathType: {{ default "ImplementationSpecific" .pathType| quote }}
+        backend:
+          service:
+            name: {{ default (default $serviceName $.Values.service.name) .serviceName }}
+            port:
+              number: {{ .servicePort }}
+      {{- end }}
+    {{- if .host }}
+    host: {{ .host }}
+    {{- end }}
+  {{- end }}
+  tls:
+  {{- range .Values.ingress.rules }}
+  {{- if and .host .tls.enabled }}
+  - hosts:
+    - {{ .host }}
+    secretName: {{ .tls.secret }}
+  {{- end }}
+  {{- end }}
+{{- end }}

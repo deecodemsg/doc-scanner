@@ -1,6 +1,7 @@
 import path from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import webpack from "webpack";
+import packageJson from "./package.json" with { type: "json" };
 import type { Configuration } from "webpack";
 import dotenv from "dotenv";
 import baseConfig from "./webpack.base.ts";
@@ -16,6 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * 2. Auto-detected at runtime from window.location (if not set)
  * Default: localhost:3000
  */
+
 const ENV_HOST = process.env.REACT_APP_HOST;
 const HOST = ENV_HOST || "http://localhost:3000";
 const DWT_PRODUCT_KEY = process.env.REACT_APP_DWT_PRODUCT_KEY || '';
@@ -43,17 +45,17 @@ const config: Configuration = {
       inject: true,
       chunks: ["dwt-mfe"],
     }),
-    new ModuleFederationPlugin({
+     new ModuleFederationPlugin({
       name: "dwt_mfe",
       filename: "remoteEntry.js",
       exposes: {
         "./App": "./src/components/App",
       },
       shared: {
-        react: { singleton: true, requiredVersion: "18.3.1", eager: true },
+        react: { singleton: true, requiredVersion: "19.3.0", eager: true },
         "react-dom": {
           singleton: true,
-          requiredVersion: "18.3.1",
+          requiredVersion: "19.3.0",
           eager: true,
         },
       },
@@ -63,6 +65,7 @@ const config: Configuration = {
       "process.env.REACT_APP_HOST": JSON.stringify(ENV_HOST || ''),
       "process.env.REACT_APP_DWT_PRODUCT_KEY": JSON.stringify(DWT_PRODUCT_KEY),
       "process.env.REACT_APP_UPLOAD_URL": JSON.stringify(UPLOAD_URL),
+      "process.env": JSON.stringify({}),
     }),
   ],
   optimization: {

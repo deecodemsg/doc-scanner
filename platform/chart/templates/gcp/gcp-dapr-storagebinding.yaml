@@ -1,0 +1,46 @@
+{{- if eq .Values.global.cloud_provider "gcp" }}
+{{- if and .Values.gcp .Values.gcp.storage }}
+{{- with .Values.gcp.storage }}
+{{- if .enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ default "gcp-storage-bucket-manager" .name }}
+spec:
+  type: bindings.gcp.bucket
+  version: v1
+  metadata:
+  - name: bucket
+    value: {{ .bucketName }}
+  - name: type
+    value: service_account
+  - name: project_id
+    value: {{ .projectId }}
+  - name: private_key_id
+    value: {{ .projectKeyId }}
+  - name: client_email
+    value: {{ .clientEmail }}
+  - name: client_id
+    value: {{ .clientId }}
+  - name: auth_uri
+    value: {{ .authUri }}
+  - name: token_uri
+    value: {{ .tokenUri }}
+  - name: auth_provider_x509_cert_url
+    value: {{ .authProviderX509CertUrl }}
+  - name: client_x509_cert_url
+    value: {{ .clientX509CertUrl }}
+  - name: private_key
+    {{- if kindIs "map" .privateKey }}
+    {{- toYaml .privateKey | nindent 4 }}
+    {{- else }}
+    value: {{ .privateKey | quote }}
+    {{- end }}
+  - name: decodeBase64
+    value: {{ .decodeBase64 }}
+  - name: encodeBase64
+    value: {{ .encodeBase64 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,34 @@
+{{- if eq .Values.global.cloud_provider "aws" }}
+{{- if and .Values.aws .Values.aws.storage }}
+{{- with .Values.aws.storage }}
+{{- if .enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ default "aws-storage-account-binding" .name }}
+spec:
+  type: bindings.aws.s3
+  version: v1
+  metadata:
+  - name: bucket
+    value: {{ .bucket }}
+  - name: region
+    value: {{ .region }}
+  - name: decodeBase64
+    value: {{ .decodeBase64 }}
+  - name: encodeBase64
+    value: {{ .encodeBase64 }}
+  - name: endpoint
+    value: {{ .endpoint }}
+  - name: forcePathStyle
+    value: {{ .forcePathStyle }}
+  - name: disableSSL
+    value: {{ .disableSSL }}
+  - name: insecureSSL
+    value: {{ .insecureSSL }}
+  - name: storageClass
+    value: {{ .storageClass }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

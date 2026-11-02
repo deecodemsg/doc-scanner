@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 0.1.0
+description: web-scanner
+name: dwt-mfe
+type: application
+version: 0.1.0

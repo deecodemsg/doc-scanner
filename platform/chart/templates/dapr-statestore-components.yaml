@@ -1,0 +1,35 @@
+{{- if and .Values.dapr .Values.dapr.components .Values.dapr.components.stateStore (kindIs "map" .Values.dapr.components.stateStore) }}
+{{- range $stateStoreType, $stateStoreData := .Values.dapr.components.stateStore }}
+{{- if $stateStoreData.resources }}
+{{- range $resourceName, $resourceData := $stateStoreData.resources }}
+{{- if $resourceData.enabled }}
+---
+apiVersion: {{ default "dapr.io/v1alpha1" $.Values.dapr.components.apiVersion }}
+kind: Component
+metadata:
+  name: {{ $resourceName }}
+  {{- with $resourceData.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ printf "state.%s" $stateStoreType }}
+  version: {{ default "v1" $stateStoreData.version }}
+  metadata:
+    {{- range $key, $value := $resourceData.metadata }}
+    - name: {{ $key }}
+      {{- if kindIs "map" $value }}
+      {{- toYaml $value | nindent 6 }}
+      {{- else }}
+      value: {{ $value }}
+      {{- end }}
+    {{- end }}
+{{- if $resourceData.secretStore }}
+auth:
+  secretStore: {{ tpl (toYaml $resourceData.secretStore) $ }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

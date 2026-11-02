@@ -1,0 +1,181 @@
+{{- $appLabel := dict "app" "dwt-mfe" }}
+{{- $resourceLimitsEnabled := default "true" (default .Values.global.resourceLimitsEnabled .Values.dwtmfe.resourceLimitsEnabled) }}
+{{- $mergedPodAnnotations := merge (default dict .Values.dwtmfe.podAnnotations) (default dict .Values.global.podAnnotations) }}
+{{- $podAnnotations := ternary
+      (omit $mergedPodAnnotations "dapr.io/sidecar-cpu-request" "dapr.io/sidecar-memory-limit" "dapr.io/sidecar-memory-request")
+      $mergedPodAnnotations
+      (not (eq $resourceLimitsEnabled "true"))
+}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dwt-mfe.fullname" . }}
+  labels:
+    {{- toYaml $appLabel | nindent 4 }}
+    {{- include "dwt-mfe.labels" . | nindent 4 }}
+  {{- with .Values.dwtmfe.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if eq (include "autoscaling.enabled" .) "false" }}
+  replicas: {{ .Values.dwtmfe.replicas }}
+  {{- end }}
+  {{- if $.Values.dwtmfe.strategy }}
+  strategy:
+    {{- toYaml $.Values.dwtmfe.strategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- toYaml $appLabel | nindent 6 }}
+      {{- include "dwt-mfe.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- toYaml $appLabel | nindent 8 }}
+        {{- include "dwt-mfe.selectorLabels" . | nindent 8 }}
+        {{- with .Values.dwtmfe.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- if and .Values.configMap .Values.configMap.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with $podAnnotations }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
+    spec:
+      topologySpreadConstraints:
+      {{- range .Values.dwtmfe.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- toYaml $appLabel | nindent 14 }}
+          {{- with .matchLabelKeys }}
+          matchLabelKeys:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.serviceAccount .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.dwtmfe.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.dwtmfe.automountServiceAccountToken }}
+      {{- end }}
+      {{- if .Values.dwtmfe.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.dwtmfe.terminationGracePeriodSeconds }}
+      {{- end }}
+      containers:
+      - name: dwt-mfe
+        image: {{ .Values.dwtmfe.image.repository }}:{{ .Values.dwtmfe.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.dwtmfe.image.pullPolicy }}
+        {{- if .Values.dwtmfe.command }}
+        command:
+          {{- toYaml .Values.dwtmfe.command | nindent 10 }}
+        {{- end }}
+        {{- if .Values.dwtmfe.args }}
+        args:
+          {{- toYaml .Values.dwtmfe.args | nindent 10 }}
+        {{- end }}
+        ports:
+        {{- range .Values.dwtmfe.ports }}
+        - name: {{ .name }}
+          containerPort: {{ .containerPort }}
+          protocol: {{ .protocol | default "TCP" }}
+        {{- end }}
+        envFrom:
+        {{- if and .Values.configMap .Values.configMap.enabled }}
+        - configMapRef:
+            name: {{ include "dwt-mfe.fullname" . }}-configmap
+        {{- end }}
+        {{- if eq $resourceLimitsEnabled "true" }}
+        resources:
+          {{- toYaml .Values.dwtmfe.resources | nindent 10 }}
+        {{- end }}
+        {{- if .Values.dwtmfe.securityContext }}
+        securityContext:
+          {{- toYaml $.Values.dwtmfe.securityContext | nindent 10 }}
+        {{- end }}
+        {{- if $.Values.dwtmfe.livenessProbe }}
+        livenessProbe:
+          {{- toYaml $.Values.dwtmfe.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if $.Values.dwtmfe.readinessProbe }}
+        readinessProbe:
+          {{- toYaml $.Values.dwtmfe.readinessProbe | nindent 10 }}
+        {{- end }}
+        {{- if $.Values.dwtmfe.lifecycle }}
+        lifecycle:
+          {{- toYaml $.Values.dwtmfe.lifecycle | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- range .Values.dwtmfe.extraSecretMounts }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
+          readOnly: {{ .readOnly }}
+          subPath: {{ .subPath | default "" }}
+        {{- end }}
+        {{- range .Values.dwtmfe.extraVolumeMounts }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
+          subPath: {{ .subPath | default "" }}
+          readOnly: {{ .readOnly }}
+        {{- end }}
+        {{- range .Values.dwtmfe.extraEmptyDirMounts }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
+        {{- end }}
+      volumes:
+      {{- range .Values.dwtmfe.extraSecretMounts }}
+      {{- if .secretName }}
+      - name: {{ .name }}
+        secret:
+          secretName: {{ .secretName }}
+          defaultMode: {{ .defaultMode }}
+          {{- with .items }}
+          items:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- else if .projected }}
+      - name: {{ .name }}
+        projected:
+          {{- toYaml .projected | nindent 10 }}
+      {{- else if .csi }}
+      - name: {{ .name }}
+        csi:
+          {{- toYaml .csi | nindent 10 }}
+      {{- end }}
+      {{- end }}
+      {{- range .Values.dwtmfe.extraVolumeMounts }}
+      - name: {{ .name }}
+        {{- if .existingClaim }}
+        persistentVolumeClaim:
+          claimName: {{ .existingClaim }}
+        {{- else if .hostPath }}
+        hostPath:
+          path: {{ .hostPath }}
+        {{- else if .csi }}
+        csi:
+          {{- toYaml .data | nindent 10 }}
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- end }}
+      {{- range .Values.dwtmfe.extraEmptyDirMounts }}
+      - name: {{ .name }}
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.dwtmfe.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.dwtmfe.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dwtmfe.tolerations }}
+      tolerations:
+        {{- toYaml .Values.dwtmfe.tolerations | nindent 8 }}
+      {{- end }}

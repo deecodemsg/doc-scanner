@@ -1,0 +1,582 @@
+configMap:
+  # -- (bool) Should configmap be created or not?
+  enabled: true
+  # -- (map) Additional data to be added to configmap
+  additionalData: {}
+
+dwtmfe:
+  # -- (int) Number of replicas of application pods
+  replicas: 1
+
+  # -- (int) Amount of time kubernetes waits post pod termination signal.
+  # <br />If preStop hook is enabled, this should be configured accordingly too.
+  terminationGracePeriodSeconds: 30
+
+  # -- (bool) Should the service account token be mounted to pods?
+  automountServiceAccountToken:
+
+  # -- (map) Application Docker Image related configurations
+  image:
+    # -- (string) Application Docker Image Repository
+    repository: REPOSITORY/il-imps-incoming-services
+    # -- (string) Application Docker Image Tag
+    tag: 0.1.0
+    # -- (string) Application Docker Image Pull Policy.
+    # <br />Possible Values: `IfNotPresent`, `Always` & `Never`
+    pullPolicy: Always
+
+  # -- (map) Application Container Ports Configurations
+  ports:
+  - name: http
+    containerPort: CONTAINER_PORT
+    protocol: TCP
+  - name: monitoring
+    containerPort: CONTAINER_PORT  #Discuss with Devops team and get the monitoring port number
+    protocol: TCP
+
+  # -- (map) Application Container Environment Variables
+  env: {}
+
+  # -- (list) Command to be ran in Application Container
+  command: []
+
+  # -- (list) Arguments to be passed to command mentioned as part of `dwtmfe.command` value
+  args: []
+
+  # -- (map) Topology Spread Constraints to be set for best distribution of pods across zone / nodes
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    matchLabelKeys:
+    - pod-template-hash
+
+  # -- (map) Liveness Probe Configuration for the application.
+  livenessProbe:
+    httpGet:
+      path: "/actuator/health/liveness" #This is health check path. If required change the path according to your service.
+      port: monitoring
+      scheme: HTTP
+    initialDelaySeconds: 60
+    periodSeconds: 1
+    timeoutSeconds: 5
+    failureThreshold: 10
+
+  # -- (map) Readiness Probe Configuration for the application.
+  readinessProbe:
+    httpGet:
+      path: "/actuator/health/readiness" #This is health check path. If required change the path according to your service.
+      port: monitoring
+      scheme: HTTP
+    initialDelaySeconds: 1
+    periodSeconds: 1
+    timeoutSeconds: 1
+    failureThreshold: 20
+
+  # -- (map) Lifecycle Confguration for the application.
+  # <br />Helpful for setting preStop hook to ensure graceful termination of pods
+  lifecycle:
+    preStop:
+      exec:
+        command: ["/bin/sh", "-c", "sleep 15"]
+
+  # -- (map) Security Context for application pods to implement hardening
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - "ALL"
+    readOnlyRootFilesystem: true
+    privileged: false
+    seccompProfile:
+      type: RuntimeDefault
+
+  # -- (map) CPU and Memory Resource Request & Limit configuration for application pods.
+  resources: {}
+    requests: 
+      memory: "500Mi"
+      cpu: "250m"
+    limits: 
+      memory: "500Mi"
+      cpu: "250m"
+
+  # -- (list) Secret mounts to be mounted as volume on application pods.
+  # <br />Relevant for usecases like SecretProviderClass mounted as volume in application pods.
+  extraSecretMounts: []
+  - name: csi-secret-provider
+    mountPath: /tmp/secrets  #If required MountPath can be changed according to your service.
+    readOnly: true
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: "csi-secret-provider"
+
+  # -- (list) Extra volume mounts on application pods, if required.
+  extraVolumeMounts: []
+
+  # -- (list) Extra emptyDir mounts on application pods, if required.
+  # <br />Relevant for mounts of ephemeral logs of pods, etc.
+  extraEmptyDirMounts: 
+  - name: tmp
+    mountPath: /tmp 
+    
+  headlessService:
+    annotations: {}
+      # metrics.dynatrace.com/port: '10001'
+    ports: {}
+      # - name: payment-imps-network-incoming-message-services-monitoring
+      #   port: 10001  
+
+
+  # -- (list) Toleration to be added for application pods for relevant Node Taints
+  tolerations: []
+  # - key: "key1"
+  #   operator: "Equal"
+  #   value: "value1"
+  #   effect: "NoSchedule"
+
+  # -- (map) Selector for ensuring pods getting scheduled on nodes with provided labels
+  nodeSelector: {}
+    # app: il-imps-incoming-services
+
+  # -- (map) Labels to be added to pods.
+  # <br />Ensure you add `azure.workload.identity/use: "true"` entry for Azure scenarios.
+  podLabels: {}
+    # azure.workload.identity/use: "true"
+
+  # -- (map) Annotations to be added to pods.
+  # <br />Dapr Annotations and other required annotations to be provided here.
+  # <br />Common annotations should be added to global section and application specific annotations should be added in micro service level.
+  podAnnotations: {
+    dapr.io/app-id: ADD-YOUR-DAPR-APP-ID, 
+    dapr.io/app-port: "ADD-YOUR-APP-PORT", 
+    dapr.io/config: tracing, 
+    dapr.io/enabled: "true", 
+    dapr.io/log-as-json: "true", 
+    dapr.io/enable-metrics: "true", 
+    dapr.io/metrics-port: "9090", 
+    dapr.io/sidecar-listen-addresses: "0.0.0.0", 
+    dapr.io/sidecar-readiness-probe-delay-seconds: "5", 
+    dapr.io/sidecar-readiness-probe-period-seconds: "1", 
+    dapr.io/sidecar-readiness-probe-timeout-seconds: "1", 
+    dapr.io/sidecar-readiness-probe-threshold: "20", 
+    dapr.io/sidecar-liveness-probe-delay-seconds: "60", 
+    dapr.io/sidecar-liveness-probe-period-seconds: "1", 
+    dapr.io/sidecar-liveness-probe-timeout-seconds: "5", 
+    dapr.io/sidecar-liveness-probe-threshold: "10", 
+    #dapr.io/sidecar-image: "asia-south1-docker.pkg.dev/hbl-poc-enterprisefac-pm-prj/il/dapr-sidecar:1.12.3-rc",
+    dapr.io/sidecar-cpu-request: "100m", 
+    dapr.io/sidecar-memory-limit: "1000Mi", 
+    dapr.io/sidecar-memory-request: "250Mi", 
+    dapr.io/log-level: "info", 
+    dapr.io/enable-app-health-check: "false", 
+    dapr.io/app-health-check-path: "/healthz", 
+    dapr.io/app-health-probe-interval: "1",
+    dapr.io/block-shutdown-duration: 60s,
+    dapr.io/graceful-shutdown-seconds: "300",
+    metrics.dynatrace.com/path: "/metrics", 
+    metrics.dynatrace.com/port: "9090", 
+    metrics.dynatrace.com/scrape: "true", 
+    metrics.dynatrace.com/secure: "false"
+  }
+
+  # -- (map) Application Deployment upgrade strategy to be followed
+  strategy:
+    # -- (string) Type of deployment upgrade strategy. <br />Possible values: `Recreate`, `RollingUpdate`
+    type: RollingUpdate
+    # -- (map) Rolling Update configuration. Relevant if `strategy.type` is set to `RollingUpdate`.
+    # <br />Possible configurations:
+    # <br />`maxSurge` - The number of pods that can be created above the desired amount of pods during an update
+    # <br />`maxUnavailable` - The number of pods that can be unavailable during the update process
+    rollingUpdate:
+      # maxSurge: 1
+      # maxUnavailable: 0
+
+  # -- (map) Annotations to be added to deployment resource.
+  deploymentAnnotations: {}
+
+pdb:
+  # -- (bool) Should Pod Disruption Budget be created or not?
+  enabled: false
+  # -- (string) Maximum Allowed Unavailable Replicas at a time
+  maxUnavailable: 1%
+
+serviceAccount:
+  # -- (bool) Should kubernetes service account be created.
+  # <br />From FYNDNA perspective, this is enabled at platform chart level and kept false at child chart level
+  enabled: false
+  # -- (string) Name of pre-existing or to be created serviceAccount which will be used by the deployment
+  # <br />If a service account was created at platform chart level, pass the name of that service account below
+  name: default
+  # -- (bool) Should the service account token for this service account be mounted, to pods using it, by default?
+  automountServiceAccountToken:
+  # -- (map) Annotations to be added to service account.
+  # <br />Relevant if `serviceAccount.enabled` flag is set to true
+  annotations: {}
+    # azure.workload.identity/client-id: AZURE_WORKLOAD_IDENTITY_ID
+    # azure.workload.identity/tenant-id: AZURE_WORKLOAD_IDENTITY_TENANT_ID
+
+service:
+  # -- (bool) Should kubernetes service be created for the application.
+  enabled: false
+  # -- (map) Annotations to be added to kubernetes service. <br />Relevant if `service.enabled` flag is set to `true`
+  annotations: {}
+  # -- (string) Type of kubernetes service to be created. <br />Possible values: `ClusterIP`, `NodePort`, `LoadBalancer`. Relevant if `service.enabled` flag is set to `true`
+  type: ClusterIP
+  # -- (string) IP to be set for kubernetes service to be created. <br />Relevant if `service.enabled` flag is set to `true` & `service.type` is set to `LoadBalancer`
+  loadBalancerIP: ""
+  # -- (map) Labels to be added to the kubernetes service. <br />Relevant if `service.enabled` flag is set to `true`
+  labels: {}
+  # -- (list) Ports configuration for kubernetes service. <br />Multiple entries can be passed accordingly. <br />Relevant if `service.enabled` flag is set to `true`
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: CONTAINER_PORT
+
+ingress:
+  # -- (bool) Should kubernetes ingress resource be created for the application service
+  enabled: false
+  # -- (string) Ingress Class Name
+  ingressClassName:
+  # -- (maps) Labels to be added for Ingress resources
+  labels: {}
+    # inglabel1: "ingval1"
+  # -- (maps) Annotations to be added for Ingress resources
+  annotations: {}
+  # -- (maps) Default Backend to be added for Ingress resources
+  defaultBackend: {}
+    # service:
+    #   name: SERVICE_NAME
+    #   port:
+    #     number: SERVICE_PORT_NUMBER
+  # -- (maps) Rules to be added for Ingress resources
+  rules:
+  - host:
+    paths:
+    - path: "/*"
+      servicePort: SERVICE_PORT_NUMBER
+    tls:
+      enabled: false
+      secret: ""
+
+podMonitoring:
+  # -- (bool) Should PodMonitoring Resource be enabled for scraping application metrics to Prometheus
+  enabled: false
+  # -- (string) Name of PodMonitoring Resource. <br />Relevant if `podMonitoring.enabled` flag is set to `true`.
+  name:
+  # -- (map) Metrics Endpoints configuration based on application ports configuration done earlier. <br />Relevant if `podMonitoring.enabled` flag is set to `true`.
+  metricEndpoints:
+  - port: http
+    path: /actuator/prometheus
+    scheme: http
+  # - port: dapr-metrics
+  #   path: /metrics
+
+azure:
+  # -- (string) Azure Workload Identity Client ID
+  # <br />Relevant if `global.cloud_provider` is set to `azure`
+  azure_identity_client_id: ""
+  # -- (string) Azure Workload Identity Tenant ID
+  # <br />Relevant if `global.cloud_provider` is set to `azure`
+  azure_tenant_id: ""
+  # -- (string) Azure Key Vault Name from where secrets will be fetched
+  # <br />Relevant if `global.cloud_provider` is set to `azure`
+  azure_keyvault_name: ""
+  # -- (map) DAPR Azure Secret Store Component Configuration
+  # <br />Relevant if `global.cloud_provider` is set to `azure`
+  secretStore:
+    # -- (bool) Should the DAPR Azure Secret Store Component be created?
+    enabled: false
+  # -- (map) DAPR Azure Storage Binding Component Configuration
+  # <br />Relevant if `global.cloud_provider` is set to `azure`
+  storage:
+    # -- (bool) Should the DAPR Azure Storage Binding Component be created?
+    enabled: false
+    # -- (string) Azure Storage Account Name
+    storageAccountName: ""
+    # -- (string) Azure Storage Account Container Name
+    storageContainerName: ""
+    # -- (string) Specifies whether data in the container may be accessed publicly and the level of access.
+    # <br />Supported values: `none`,`container`,`blob`
+    publicAccessLevel: none
+    # -- (string) Specifies the maximum number of HTTP GET requests that will be made while reading from a RetryReader
+    getBlobRetryCount: 10
+    # -- (string) Configuration to decode base64 file content before saving to Blob Storage. (In case of saving a file with binary content).
+    decodeBase64: "false"
+  # -- (map) Secret Store CSI Driver `SecretProviderClass` Configuration
+  # <br />Relevant if `global.cloud_provider` is set to `azure`
+  secretProviderClass:
+    # -- (bool) Should the `SecretProviderClass` resource be created?
+    enabled: false
+    # -- (map) Map of `SecretProviderClass` resources to be created
+    resources:
+      # -- (map) `SecretProviderClass` configuration.
+      # <br />Key of the map is the name of `SecretProviderClass` resource
+      SECRET_PROVIDER_CLASS_RESOURCE_NAME:
+        # -- (bool) Should the Kubernetes secret objects be created for this `SecretProviderClass`?
+        secretObjectsEnabled: true
+        # -- (map) Annotations to be added to `SecretProviderClass` resource
+        annotations: {}
+        # -- (map) Map of additional parameters incase required to be passed in `parameters` section of `SecretProviderClass` resource
+        additionalParameters: {}
+        # -- (map) Map of multiple Azure Secrets to be mapped in `SecretProviderClass` resource
+        data:
+          # -- (map) Map of Azure Key Vault Secret Details.
+          # <br />Key of the map is the name of Kubernetes Secret that will be created post mount of this `SecretProviderClass` resource
+
+          #Connect with Devops(EF-DevSecOps) team and get the objectName
+          KUBERNETES_SECRET_NAME:
+          - objectName: "KEY_VAULT_SECRET_NAME"
+            objectAlias: "MOUNT_FILE_NAME"
+            k8sSecretKey: "KUBERNETES_SECRET_KEY"
+
+dapr:
+  # -- (map) Map of DAPR `Configuration` resources that needs to be created.
+  configurations:
+    # -- (map) DAPR tracing `Configuration` resource configuration.
+    # <br />Key of the map is the name of DAPR `Configuration` resource
+    tracing:
+      # -- (bool) Should the `Configuration` resource be created?
+      enabled: false
+      # -- (map) Spec block of `Configuration` resource.
+      # <br />Refer [dapr documentation](https://docs.dapr.io/reference/resource-specs/configuration-schema/) for more details
+      spec:
+        tracing:
+          samplingRate: "1"
+          zipkin:
+            endpointAddress: ""
+        metrics:
+          enabled: true
+          http:
+            increasedCardinality: false
+  # -- (map) Map of DAPR `Component` resources that needs to be created.
+  components:
+    # -- (map) Key of the map is the type of DAPR `Component` resource
+    pubsub:
+      # -- (map) Key of the map is the subtype of DAPR Pubsub `Component` resource
+      kafka:
+        # version: v1
+        # -- (map) Map of Kafka Pubsub DAPR `Component` resources
+        resources:
+          # -- (map) Key of the map is the name of Kafka Pubsub DAPR `Component` resource
+          RESOURCE_NAME:
+            # -- (bool) Should the Kafka Pubsub DAPR `Component` resource be created?
+            enabled: true
+            # -- (string) Secret Store to use incase values are referred from secrets.
+            # </br > Default is kubernetes secret store
+            secretStore:
+            # -- (list) Scope specification for Kafka Pubsub DAPR `Component` resource
+            scopes: []
+            # - <SCOPE_1>
+            # -- (list) Metadata specification for Kafka Pubsub DAPR `Component` resource
+            # <br />Refer [dapr documentation](https://docs.dapr.io/reference/components-reference/supported-pubsub/setup-apache-kafka/#spec-metadata-fields) for more details
+            metadata:
+              # brokers:
+              clientID: "COMPONENT_CLIENT_ID"
+              authRequired: "false"
+              authType: "none"
+              saslMechanism: "SHA-512"
+              maxMessageBytes: 204800
+              consumeRetryInterval: 200ms
+              disableTls: "true"
+              skipVerify: "true"
+              # saslUsername: # Required if authRequired is `true`.
+              #   secretKeyRef:
+              #     name: confluent-cloud-secret
+              #     key: saslUsername
+              # saslPassword: # Required if authRequired is `true`.
+              #   secretKeyRef:
+              #     name: confluent-cloud-secret
+              #     key: saslPassword
+              # caCert: # Certificate authority certificate. Required if skipVerify is `false`.
+              #   secretKeyRef:
+              #     name: confluent-cloud-secret
+              #     key: caCert
+    # -- (map) Key of the map is the type of DAPR `Component` resource
+    bindings:
+      # -- (map) Key of the map is the subtype of DAPR Binding `Component` resource
+      http:
+        version: v1
+        # -- (map) Map of DAPR HTTP Bindings `Component` resources
+        resources:
+          # -- (map) Key of the map is the name of DAPR HTTP Bindings `Component` resource
+          RESOURCE_NAME:
+            # -- (bool) Should the DAPR HTTP Bindings `Component` resource be created?
+            enabled: true
+            # secretStore:
+            # -- (map) Metadata block of DAPR HTTP Bindings `Component` resource
+            metadata:
+              # -- (string) URL to be pointed to by DAPR HTTP Bindings `Component` resource
+              url: ""
+    # -- (map) Key of the map is the type of DAPR `Component` resource
+    stateStore:
+      # -- (map) Key of the map is the subtype of DAPR State Store `Component` resource.
+      # <br />Refer https://docs.dapr.io/reference/components-reference/supported-state-stores for possible state store types
+      STATE_STORE_TYPE:
+        # -- (string) Version of DAPR State Store `Component` resources
+        version: v1
+        # -- (map) Map of DAPR State Store `Component` resources
+        resources:
+          # -- (map) Key of the map is the name of DAPR State Store `Component` resource
+          STATE_STORE_RESOURCE_NAME:
+            # -- (bool) Should the DAPR State Store `Component` resource be created?
+            enabled: false
+            # secretStore:
+            # -- (map) Metadata block of DAPR State Store `Component` resource. Refer dapr documentation for supported key values
+            metadata: {}
+              # Sample -
+              # redisHost: hostname
+              # redisPassword:
+              #   secretKeyRef:
+              #     name: redis-secret
+              #     key: redisPassword
+  # -- (map) Map of DAPR `Subscriptions` resources that needs to be created.
+  subscriptions:
+    apiVersion: dapr.io/v2alpha1
+    # -- (map) Map of DAPR `Subscription` resources
+    resources:
+      # -- (map) Key of the map is the name of DAPR `Subscription` resource
+      RESOURCE_1_NAME:
+        # -- (bool) Should the DAPR `Subscription` resource be created?
+        enabled: false
+        # -- (map) Annotations to be added to DAPR `Subscription` resource
+        annotations: {}
+        # -- (map) Spec to be configured for DAPR `Subscription` resource
+        spec:
+          # -- (string) Topic name to which the `Subscription` resource listen to
+          topic: TOPIC_NAME
+          # -- (map) Routes configuration to be done for `Subscription` resource
+          routes:
+            # -- (string) Default route path to be configured for `Subscription` resource
+            default: DEFAULT_ROUTE_PATH
+            # -- (list) OPTIONAL - List of route rules to be attached to `Subscription` resource
+            rules: []
+            # - match: event.type == "widget"
+            #   path: /widgets
+          # -- (string) Kafka DAPR Pubsub component name to which the `Subscription` resource maps to
+          pubsubname: KAFKA_DAPR_PUBSUB_COMPONENT_NAME
+        # -- (list) Services for which this DAPR `Subscription` resource will be confined to
+        scopes: []
+        # - SERVICE1
+        # - SERVICE2
+  # -- (map) Map of DAPR `Resiliency` resources that needs to be created.
+  resiliencies:
+    apiVersion: dapr.io/v1alpha1
+    # -- (map) Map of DAPR `Resiliency` resources
+    resources:
+      # -- (map) Key of the map is the name of DAPR `Resiliency` resource
+      RESOURCE_1_NAME:
+        # -- (bool) Should the DAPR `Resiliency` resource be created?
+        enabled: false
+        # -- (list) Services for which this DAPR `Resiliency` resource will be confined to
+        scopes: []
+        # - payment-imps-alert-services
+        # -- (map) Spec to be configured for DAPR `Resiliency` resource. Refer documentation https://docs.dapr.io/reference/resource-specs/resiliency-schema/
+        spec: {}
+          # policies:
+          #   timeouts:
+          #     alertEventSvcTimeout: 10s
+          #     impsPubSubInTimeout: 0s
+          # targets:
+          #   apps:
+          #     alert-event-services:
+          #       timeout: alertEventSvcTimeout
+          #   components:
+          #     imps-pubsub:
+          #       inbound:
+          #         timeout: impsPubSubInTimeout
+
+autoscaling:
+  # enabled: false
+  # -- (int) Minimum Replicas to be set for HPA / Scaled Object for autoscaling purposes
+  minReplicas: 5
+  # -- (int) Maximum Replicas to be set for HPA / Scaled Object for autoscaling purposes
+  maxReplicas: 50
+  # -- (int) Polling Interval to be set for HPA / Scaled Object for autoscaling purposes
+  pollingInterval: 30 # Optional. Default: 30 seconds
+  # -- (int) Cool Down Period to be set for HPA / Scaled Object for autoscaling purposes
+  cooldownPeriod: 300
+  # -- (map) Advanced configurations to be set for HPA / Scaled Object for autoscaling purposes
+  advanced:                                          # Optional. Section to specify advanced options
+    restoreToOriginalReplicaCount: false             # Optional. Default: false
+    horizontalPodAutoscalerConfig:                   # Optional. Section to specify HPA related options
+      behavior:                                      # Optional. Use to modify HPA's scaling behavior
+        scaleDown:
+          stabilizationWindowSeconds: 300
+  # -- (list) List of triggers to be set for Scaled Object / HPA based on which autoscaling of pods will occur.
+  triggers: []
+    # - type: prometheus
+    #   metadata:
+    #     serverAddress: "{{ .Values.global.prometheusFrontendUrl }}"
+    #     metricName: ""
+    #     threshold: ""
+    #     query: ""
+    #   authenticationRef:
+    #     name: ""
+    # - type: kafka
+    #   metadata:
+    #     bootstrapServers: "{{ .Values.global.kafkaBrokers }}"
+    #     consumerGroup: ""
+    #     topic: ""
+    #   authenticationRef:
+    #     name: ""
+# -- TriggerAuthentication values to be defined for use with KEDA ScaledObject
+triggerAuthentication: []
+  # enabled: true
+  # name: incoming-trigger-auth
+  # namespace: app-imps
+  # -- To Enable or Disable PodIdentity 
+  # podIdentity:
+    # -- (String) Set to false to disable podIdentity
+    # enabled: true 
+    # -- (String) Supported Values are none | azure | azure-workload | aws | aws-eks | aws-kiam | gcp  # Optional. Default: none
+    # provider: 
+    # -- (String) # Optional. Only used by azure & azure-workload providers.
+    # identityId: <identity-id>                                           
+    # -- (String) # Optional. Only used by aws provider.
+    # roleArn: <role-arn>               
+    # -- (String) Supported Values are keda|workload|operator                                  
+    # identityOwner: 
+  # -- (String) To Define any secrets to be used for scaling
+  # secret:
+  #   enabled: false
+    # -- [List] List of secrets to be defined for TrigerAuth
+  #    items: []
+
+global:
+  # -- (string) Cloud Provider Type. Possible values: `gcp`, `azure`, `aws`
+  cloud_provider: azure
+  # -- (list) List of Image Pull Secrets to be set for application pods.
+  # <br />Format: <br />
+  # `- name: docker-registry-secret`
+  imagePullSecrets: []
+  # - name: docker-registry-secret
+  # -- (map) Application Container Environment Variables set at global level.
+  # <br />Relevant for common variables that you need to set for all child charts in a parent chart
+  env: {}
+  # -- (map) Pod Monitoring Scrape Interval Configuration
+  podMonitoring:
+    # -- (string) Scrape interval to be set for scraping metrics to Promethues via PodMonitoring
+    scrape_interval: 5s
+  # -- (string) Comma Seperated List of Kafka Brokers.
+  # <br />Format: `"KAFKA_BROKER_IP_1:KAFKA_BROKER_PORT,KAFKA_BROKER_IP_2:KAFKA_BROKER_PORT"`
+  kafkaBrokers: ""
+  # -- (string) Promethues Frontend URL used by Scaled Object / HPA to fetch metrics for promethues based triggers.
+  prometheusFrontendUrl: ""
+  # -- (bool) Should Scaled Object / HPA be created for pods autoscaling.
+  autoscalingEnabled: false
+  # -- (string) Should CPU and Memory Resource Requests Limits be set?
+  resourceLimitsEnabled: "true"
+  # -- (string) Should be set to false if headless service is not in use
+  headlessService:
+    enabled: false
+    # -- (map) To Define any annotations for headless service
+    annotations: {}
+      # metrics.dynatrace.com/scrape: 'true'
+      # metrics.dynatrace.com/secure: 'false'
+      # metrics.dynatrace.com/path: /actuator/prometheus

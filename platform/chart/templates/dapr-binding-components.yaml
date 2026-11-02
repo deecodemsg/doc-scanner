@@ -1,0 +1,37 @@
+{{- if and .Values.dapr .Values.dapr.components .Values.dapr.components.bindings (kindIs "map" .Values.dapr.components.bindings) }}
+{{- range $bindingType, $bindingData := .Values.dapr.components.bindings }}
+{{- if $bindingData.resources }}
+{{- range $resourceName, $resourceData := $bindingData.resources }}
+{{- if $resourceData.enabled }}
+---
+apiVersion: {{ default "dapr.io/v1alpha1" $.Values.dapr.components.apiVersion }}
+kind: Component
+metadata:
+  name: {{ $resourceName }}
+  {{- with $resourceData.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ printf "bindings.%s" $bindingType }}
+  version: {{ default "v1" $bindingData.version }}
+  metadata:
+    {{- range $item := $resourceData.metadata }}
+    - name: {{ $item.name }}
+      {{- if hasKey $item "value" }}
+      value: {{ $item.value }}
+      {{- else if hasKey $item "secretKeyRef" }}
+      secretKeyRef:
+        name: {{ $item.secretKeyRef.name }}
+        key: {{ $item.secretKeyRef.key }}
+      {{- end }}
+    {{- end }}
+  {{- if $resourceData.secretStore }}
+  auth:
+    secretStore: {{ tpl (toYaml $resourceData.secretStore) $ }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

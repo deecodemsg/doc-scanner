@@ -1,0 +1,21 @@
+{{- if and .Values.dapr .Values.dapr.subscriptions .Values.dapr.subscriptions.resources }}
+{{- range $resourceName, $resourceData := $.Values.dapr.subscriptions.resources }}
+{{- if $resourceData.enabled }}
+---
+apiVersion: {{ default "dapr.io/v2alpha1" $.Values.dapr.subscriptions.apiVersion }}
+kind: Subscription
+metadata:
+  name: {{ $resourceName }}
+  {{- with $resourceData.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $resourceData.spec }}
+  {{- tpl (toYaml .) $ | nindent 2 }}
+  {{- end }}
+scopes:
+  {{- toYaml $resourceData.scopes | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

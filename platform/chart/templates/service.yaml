@@ -1,0 +1,26 @@
+{{- if and .Values.service .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ default (include "dwt-mfe.fullname" .) .Values.service.name }}
+  labels:
+    app: dwt-mfe
+    {{- include "dwt-mfe.labels" . | nindent 4 }}
+    {{- with .Values.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.service.annotations }}
+    {{- tpl (toYaml .Values.service.annotations) . | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if eq .Values.service.type "LoadBalancer" }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
+  selector:
+    app: dwt-mfe
+  {{- include "dwt-mfe.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.service.ports | toYaml | nindent 2 }}
+{{- end }}

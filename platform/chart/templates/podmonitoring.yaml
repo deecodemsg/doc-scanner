@@ -1,0 +1,28 @@
+{{- if and .Values.podMonitoring .Values.podMonitoring.enabled }}
+{{- $scrape_interval := default .Values.global.podMonitoring.scrape_interval .Values.podMonitoring.scrape_interval }}
+{{- $endpointKey := default (ternary "endpoints" "podMetricsEndpoints" (and (eq .Values.global.cloud_provider "gcp") (.Capabilities.APIVersions.Has "monitoring.googleapis.com/v1"))) .Values.podMonitoring.endpointKey }}
+{{- if and (eq .Values.global.cloud_provider "gcp") (.Capabilities.APIVersions.Has "monitoring.googleapis.com/v1") }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+{{- else if and (eq .Values.global.cloud_provider "azure") (.Capabilities.APIVersions.Has "azmonitoring.coreos.com/v1") }}
+apiVersion: azmonitoring.coreos.com/v1
+kind: PodMonitor
+{{- else }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+{{- end }}
+metadata:
+  name: {{ default (include "dwt-mfe.fullname" .) .Values.podMonitoring.name }}
+spec:
+  {{ $endpointKey }}:
+  {{- range .Values.podMonitoring.metricEndpoints }}
+  - interval: {{ $scrape_interval }}
+    port: {{ .port }}
+    path: {{ .path }}
+    scheme: {{ default "http" .scheme }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: dwt-mfe
+      {{- include "dwt-mfe.selectorLabels" . | nindent 6 }}
+{{- end }}

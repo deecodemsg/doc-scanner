@@ -1,0 +1,12 @@
+{{- if eq .Values.global.cloud_provider "gcp" }}
+{{- if and .Values.frontendConfig .Values.ingress .Values.frontendConfig.enabled .Values.ingress.enabled }}
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ .Values.frontendConfig.name }}
+  labels:
+  {{- include "dwt-mfe.labels" . | nindent 4 }}
+spec:
+  {{- toYaml .Values.frontendConfig.spec | nindent 2 }}
+{{- end }}
+{{- end }}

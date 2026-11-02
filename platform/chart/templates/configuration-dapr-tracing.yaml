@@ -1,0 +1,13 @@
+{{- if and .Values.dapr .Values.dapr.configurations }}
+{{- range $resourceName, $resourceData := .Values.dapr.configurations }}
+{{- if $resourceData.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: {{ $resourceName }}
+spec:
+  {{- toYaml $resourceData.spec | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

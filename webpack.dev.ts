@@ -2,6 +2,7 @@ import path from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import type { Configuration as WebpackConfig } from "webpack";
 import type { Configuration as DevServerConfig } from "webpack-dev-server";
+import packageJson from "./package.json" with { type: "json" };
 import webpack from "webpack";
 import dotenv from "dotenv";
 import baseConfig from "./webpack.base.ts";
@@ -47,10 +48,10 @@ const config: Config = {
         "./App": "./src/components/App",
       },
       shared: {
-        react: { singleton: true, requiredVersion: "18.3.1", eager: true },
+        react: { singleton: true, requiredVersion: "19.3.0", eager: true },
         "react-dom": {
           singleton: true,
-          requiredVersion: "18.3.1",
+          requiredVersion: "19.3.0",
           eager: true,
         },
       },

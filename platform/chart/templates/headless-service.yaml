@@ -1,0 +1,27 @@
+{{- $result := dict }}
+{{- if .Values.global.headlessService }}
+  {{- $result = mergeOverwrite (deepCopy .Values.global.headlessService) (default dict .Values.dwtmfe.headlessService)  }}
+{{- else if .Values.dwtmfe.headlessService }}
+  {{- $result = .Values.dwtmfe.headlessService }}
+{{- end }}
+{{ if and $result.enabled (not (empty $result)) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynatrace-monitoring-{{ include "dwt-mfe.name" .  | trunc 40 | trimSuffix "-" }}
+  labels:
+    app: dwt-mfe
+  {{- include "dwt-mfe.labels" . | nindent 4 }}
+  {{- if $result.annotations }}
+  annotations: 
+  {{- toYaml $result.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: dwt-mfe
+  {{- include "dwt-mfe.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- $result.ports | toYaml | nindent 2 -}}
+{{- end }}

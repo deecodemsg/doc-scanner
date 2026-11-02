@@ -1,0 +1,28 @@
+{{- if eq .Values.global.cloud_provider "azure" }}
+{{- if and .Values.azure .Values.azure.storage }}
+{{- with .Values.azure.storage }}
+{{- if .enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ default "azure-storage-account-binding" .name }}
+spec:
+  type: bindings.azure.blobstorage
+  version: v1
+  metadata:
+  - name: accountName
+    value: {{ .storageAccountName }}
+  - name: containerName
+    value: {{ .storageContainerName }}
+  - name: decodeBase64
+    value: {{ .decodeBase64 }}
+  - name: getBlobRetryCount
+    value: {{ .getBlobRetryCount }}
+  - name: publicAccessLevel
+    value: {{ .publicAccessLevel }}
+  - name: azureClientId
+    value: {{ $.Values.azure.azure_identity_client_id | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
