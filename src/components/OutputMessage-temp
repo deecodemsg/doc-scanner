@@ -1,1 +1,113 @@
+import React, { Component } from "react";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
+
+interface OutputMessageState {
+  open: boolean;
+  message: string;
+  severity: "error" | "info";
+}
+
+export default class OutputMessage extends Component<{}, OutputMessageState> {
+  private messageObserver?: MutationObserver;
+  private previousMessage = "";
+  private previousHtml = "";
+
+  state: OutputMessageState = {
+    open: false,
+    message: "",
+    severity: "info",
+  };
+
+  componentDidMount() {
+    const messageElement = document.getElementById("DWTemessage");
+    if (!messageElement) return;
+
+    this.previousMessage = messageElement.innerText;
+    this.previousHtml = messageElement.innerHTML;
+    if (this.previousMessage.trim()) {
+      this.setState({
+        open: true,
+        message: this.previousMessage.trim(),
+        severity: this.getSeverity(this.previousHtml, this.previousMessage),
+      });
+    }
+
+    this.messageObserver = new MutationObserver(() => {
+      const currentMessage = messageElement.innerText;
+      const currentHtml = messageElement.innerHTML;
+      const newMessage = currentMessage.startsWith(this.previousMessage)
+        ? currentMessage.slice(this.previousMessage.length)
+        : currentMessage;
+      const newHtml = currentHtml.startsWith(this.previousHtml)
+        ? currentHtml.slice(this.previousHtml.length)
+        : currentHtml;
+      this.previousMessage = currentMessage;
+      this.previousHtml = currentHtml;
+
+      if (newMessage.trim()) {
+        this.setState({
+          open: true,
+          message: newMessage.trim(),
+          severity: this.getSeverity(newHtml, newMessage),
+        });
+      }
+    });
+    this.messageObserver.observe(messageElement, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  }
+
+  private getSeverity(html: string, message: string): "error" | "info" {
+    return html.includes("#cE5E04") ||
+      /\b(error|failed|failure|unavailable|unable|not available|not found)\b/i.test(
+        message,
+      )
+      ? "error"
+      : "info";
+  }
+
+  componentWillUnmount() {
+    this.messageObserver?.disconnect();
+  }
+
+  private handleClose = () => {
+    this.setState({ open: false });
+  };
+
+  render() {
+    const { open, message, severity } = this.state;
+
+    return (
+      <>
+        <div id="DWTdivMsg" className="clearfix" style={{ display: "none" }}>
+          <div id="DWTemessage" />
+        </div>
+        <Snackbar
+          open={open}
+          autoHideDuration={6000}
+          onClose={this.handleClose}
+          anchorOrigin={{ vertical: "center", horizontal: "right" }}
+        >
+          <Alert
+            onClose={this.handleClose}
+            severity={severity}
+            variant="filled"
+            sx={{
+              width: "100%",
+              backgroundColor:
+                severity === "error" ? "#D32F2F" : "#2F4FA7",
+              color: "#fff",
+              "& .MuiAlert-icon, & .MuiAlert-action": { color: "#fff" },
+            }}
+          >
+            {message}
+          </Alert>
+        </Snackbar>
+      </>
+    );
+  }
+}
 
