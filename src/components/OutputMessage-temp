@@ -110,4 +110,3 @@ export default class OutputMessage extends Component<{}, OutputMessageState> {
     );
   }
 }
-
