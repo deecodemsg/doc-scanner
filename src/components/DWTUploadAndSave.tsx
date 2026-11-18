@@ -17,6 +17,8 @@ interface State {
   strExtension: string;
   folderLocation: string;
   bAllPages: boolean;
+  savedPath: string;
+  saveErrorMessage: string;
 }
 
 export default class DWTUploadAndSave extends Component<Props, State> {
@@ -27,7 +29,13 @@ export default class DWTUploadAndSave extends Component<Props, State> {
       strExtension: "pdf",
       folderLocation: "",
       bAllPages: true,
+      savedPath: "",
+      saveErrorMessage: "",
     };
+  }
+
+  componentDidMount() {
+    this.props.dwtUtil.setSaveButtonEnabled(false);
   }
 
   async setFolderLocation(evt: React.ChangeEvent<HTMLSelectElement>) {
@@ -67,15 +75,65 @@ export default class DWTUploadAndSave extends Component<Props, State> {
 
   private handleSaveToLocal = () => {
     const { strFileNameWithoutExt, strExtension, bAllPages } = this.state;
-    this.props.dwtUtil.save(
+    this.setState({ savedPath: "", saveErrorMessage: "" });
+
+    const scanner = getSelectEl("source")?.value.trim();
+    if (!scanner || scanner === "Choose...") {
+      this.showSaveError("Please select a scanner before saving.");
+      return;
+    }
+
+    if (!strFileNameWithoutExt.trim()) {
+      this.showSaveError("Please enter a file name before saving.");
+      return;
+    }
+
+    if (!this.props.dwtUtil.hasImagesInBuffer()) {
+      this.showSaveError("Please scan or import a document before saving.");
+      return;
+    }
+
+    const savePromise = this.props.dwtUtil.save(
       "local",
       strFileNameWithoutExt,
       strExtension,
       bAllPages.toString(),
-    ).then((res) => {
+    );
+    if (!savePromise) {
+      this.showSaveError("Unable to start saving. Please try again.");
+      return;
+    }
+
+    savePromise.then((res) => {
+      if (!res) {
+        this.setState({
+          saveErrorMessage: "Please choose a save location to continue.",
+        });
+        return;
+      }
+      if (!res.name || !res.path) {
+        this.showSaveError(
+          "The file name or save location is missing. Please choose both and try again.",
+        );
+        return;
+      }
+      this.setState({ savedPath: res.path });
       this.props.scannedFileDetails && this.props.scannedFileDetails({ fileName: res.name, filePath: res.path });
+    }).catch((error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Unable to save the document. Please try again.";
+      this.showSaveError(message);
     });
   };
+
+  private showSaveError(message: string) {
+    this.setState({ saveErrorMessage: message });
+    this.props.dwtUtil.showErrorMessage(message);
+  }
 
   private handleImageExtensionChange(
     evt: React.ChangeEvent<HTMLSelectElement>,
@@ -106,8 +164,14 @@ export default class DWTUploadAndSave extends Component<Props, State> {
   }
 
   render() {
-    const { strFileNameWithoutExt, strExtension, bAllPages, folderLocation } =
-      this.state;
+    const {
+      strFileNameWithoutExt,
+      strExtension,
+      bAllPages,
+      folderLocation,
+      savedPath,
+      saveErrorMessage,
+    } = this.state;
 
     return (
       <>
@@ -122,24 +186,25 @@ export default class DWTUploadAndSave extends Component<Props, State> {
             </li>
           </ul>
         </div>
-        <div className="divinput" style={{ padding: "8px" }}>
+        <div className="divinput ds-save-panel">
           <div id="divSaveDetail">
             <ul>
-              <li>
-                <p>File Name:</p>
+              <li className="ds-save-file-row">
+                <label htmlFor="fileName">File Name:</label>
                 <input
+                  id="fileName"
                   type="text"
-                  size={20}
+                  className="ds-save-file-name"
                   value={strFileNameWithoutExt}
                   onChange={(e) =>
                     this.setState({ strFileNameWithoutExt: e.target.value })
                   }
                 />
-                <span> . </span>
+                <span aria-hidden="true">.</span>
                 <select
                   size={1}
                   id="fileType"
-                  style={{ position: "relative", width: "25%" }}
+                  className="ds-save-file-type"
                   value={strExtension}
                   onChange={(e) => this.handleImageExtensionChange(e)}
                 >
@@ -244,6 +309,30 @@ export default class DWTUploadAndSave extends Component<Props, State> {
                   }}
                   onClick={() => this.handleSaveToLocal()}
                 />
+                {saveErrorMessage && (
+                  <div
+                    role="alert"
+                    style={{
+                      margin: "4px 8px 0",
+                      color: "#D32F2F",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {saveErrorMessage}
+                  </div>
+                )}
+                {savedPath && (
+                  <div
+                    role="status"
+                    style={{
+                      margin: "4px 8px 0",
+                      color: "#2F4FA7",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                   {savedPath}
+                  </div>
+                )}
               </li>
             </ul>
           </div>
