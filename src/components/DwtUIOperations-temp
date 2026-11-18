@@ -34,6 +34,7 @@ export class DwtUIOperations {
   protected generalSubscription?: Subscription;
   protected containerId: string;
   protected editorShown = false;
+  private selectedDeviceName = "";
 
   constructor(containerId: string) {
     this.containerId = containerId;
@@ -176,12 +177,20 @@ export class DwtUIOperations {
   }
 
   checkIfImagesInBuffer() {
-    if (this.dwtObject?.HowManyImagesInBuffer == 0) {
+    if (!this.hasImagesInBuffer()) {
       appendMessage(
-        "<span style='color:#cE5E04'><strong>There is no image in the buffer.</strong></span><br />",
+        "<span style='color:#cE5E04'><strong>Please scan or import a document before saving.</strong></span><br />",
       );
       return false;
     } else return true;
+  }
+
+  hasImagesInBuffer() {
+    return (this.dwtObject?.HowManyImagesInBuffer ?? 0) > 0;
+  }
+
+  showErrorMessage(message: string) {
+    checkErrorStringWithErrorCode(-1, message);
   }
 
   //----------------
@@ -512,17 +521,23 @@ export class DwtUIOperations {
             appendStrongMessage("Saved Folderd detail: " + res.path);
             return { ...res };
           },
-          (error) =>
-            typeof error === "string"
-              ? checkErrorStringWithErrorCode(-1, error)
-              : addMessage(error),
+          (error) => {
+            if (typeof error === "string") {
+              const message =
+                error === "User cancelled the operation."
+                  ? "Please choose a save location to continue."
+                  : error;
+              checkErrorStringWithErrorCode(-1, message);
+            } else {
+              addMessage(error);
+            }
+          },
         );
     }
   }
 
   // acquire image
   acquireImage(deviceName: any, scanOptions: any) {
-    this.setSaveButtonEnabled(false);
     this.dwtService
       .selectADevice(deviceName)
       .then(() => {
@@ -530,16 +545,10 @@ export class DwtUIOperations {
       })
       .then(
         () => {
-          this.setSaveButtonEnabled(
-            Boolean(deviceName) &&
-              deviceName !== "Choose..." &&
-              (this.dwtObject?.HowManyImagesInBuffer ?? 0) > 0,
-          );
           appendStrongMessage("Scan: ");
           checkErrorStringWithErrorCode(0, "Successful.");
         },
         (err) => {
-          this.setSaveButtonEnabled(false);
           appendStrongMessage("Scan: ");
           checkErrorStringWithErrorCode(-1, err);
         },
@@ -569,14 +578,39 @@ export class DwtUIOperations {
 
   // device changed
   handleDeviceChanged(deviceName: string) {
-    this.setSaveButtonEnabled(false);
-    if (deviceName === "" || deviceName === "Choose...") return;
+    if (deviceName === "" || deviceName === "Choose...") {
+      this.setSaveButtonEnabled(false);
+      return;
+    }
 
+    this.setSaveButtonEnabled(true);
     this.dwtService.selectADevice(deviceName).then(
       (done) => {
         if (!done) {
           checkErrorStringWithErrorCode(-1, "Device selecting failed!");
+          return;
         }
+
+        const source = getSelectEl("source");
+        if (source && source.value !== deviceName) return;
+
+        if (
+          this.selectedDeviceName &&
+          this.selectedDeviceName !== deviceName &&
+          (this.dwtObject?.HowManyImagesInBuffer ?? 0) > 0
+        ) {
+          if (!this.dwtObject?.RemoveAllImages()) {
+            checkErrorStringWithErrorCode(
+              -1,
+              "Could not remove the previous scan. Please try again.",
+            );
+            return;
+          }
+          this.updatePageInfo();
+          this._setCanvasBackground();
+        }
+
+        this.selectedDeviceName = deviceName;
 
         let showUI = getInputEl("ShowUI");
         let twainsource = getSelectEl("source") as HTMLSelectElement;
@@ -591,23 +625,24 @@ export class DwtUIOperations {
           }
         }
       },
-      (error) =>
+      (error) => {
         typeof error === "string"
           ? checkErrorStringWithErrorCode(-1, error)
-          : checkErrorStringWithErrorCode(-1, "Device selecting failed!"),
+          : checkErrorStringWithErrorCode(-1, "Device selecting failed!");
+      },
     );
   }
 
   setSaveButtonEnabled(enabled: boolean) {
     const saveButton = getInputEl("btnSave");
-    if (saveButton) {
+   /* if (saveButton) {
       saveButton.disabled = !enabled;
       saveButton.style.backgroundColor = enabled ? "" : "#9E9E9E";
       saveButton.style.borderColor = enabled ? "" : "#9E9E9E";
       saveButton.style.color = enabled ? "" : "#fff";
       saveButton.style.cursor = enabled ? "" : "not-allowed";
       saveButton.style.opacity = enabled ? "" : "0.65";
-    }
+    }*/
   }
 
   // resize
@@ -716,9 +751,6 @@ export class DwtUIOperations {
 
   private _handleOnBufferChanged() {
     // The event OnBufferChanged is used here for monitoring the image buffer.
-    if (this.dwtObject?.HowManyImagesInBuffer === 0) {
-      this.setSaveButtonEnabled(false);
-    }
     this.dwtService.bufferSubject.next("changed");
     if (this.dwtObject?.HowManyImagesInBuffer === 0)
       this.dwtService.bufferSubject.next("empty");
@@ -1546,4 +1578,3 @@ export function getImageType(fileExtension: string): number {
 
   return ret;
 }
-
