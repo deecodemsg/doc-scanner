@@ -635,14 +635,14 @@ export class DwtUIOperations {
 
   setSaveButtonEnabled(enabled: boolean) {
     const saveButton = getInputEl("btnSave");
-   /* if (saveButton) {
+    if (saveButton) {
       saveButton.disabled = !enabled;
       saveButton.style.backgroundColor = enabled ? "" : "#9E9E9E";
       saveButton.style.borderColor = enabled ? "" : "#9E9E9E";
       saveButton.style.color = enabled ? "" : "#fff";
       saveButton.style.cursor = enabled ? "" : "not-allowed";
       saveButton.style.opacity = enabled ? "" : "0.65";
-    }*/
+    }
   }
 
   // resize
