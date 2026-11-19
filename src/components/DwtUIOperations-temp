@@ -41,7 +41,7 @@ export class DwtUIOperations {
     this.dwtService = new DwtService(containerId);
   }
 
-  onPageInit() {
+  onPageInit(onStatusChange: (ready: boolean, message?: string) => void) {
     initiateInputs();
     hideLoadImageForLinux();
     initStyle();
@@ -76,26 +76,75 @@ export class DwtUIOperations {
       },
     );
 
-    let _this = this;
+    const jsVersions = String(Dynamsoft.DWT.JSVersion || "")
+      .split(",")
+      .map((version: string) => version.trim())
+      .filter(Boolean);
+    const getServiceVersion = () =>
+      String(
+        (browserInfo.bWin
+          ? Dynamsoft.DWT.ServerVersionInfo
+          : browserInfo.bMac
+            ? Dynamsoft.DWT.ServerMacVersionInfo
+            : Dynamsoft.DWT.ServerLinuxVersionInfo) || "",
+      ).trim();
+    const reportError = (message: string) => {
+      onStatusChange(false, message);
+      checkErrorStringWithErrorCode(-1, message);
+    };
+
     this.dwtService.init(
-      function (dwtObject: WebTwain) {
-        _this.dwtObject = dwtObject;
-        _this.bindViewer();
-        _this.dwtService
+      (dwtObject: WebTwain) => {
+        if (!dwtObject) {
+          reportError(
+            dwtObject?.ErrorString ||
+              "Dynamic Web TWAIN could not initialize. Check the service installation and try again.",
+          );
+          return;
+        }
+
+        const serviceVersion = getServiceVersion();
+        if (!serviceVersion || !jsVersions.includes(serviceVersion)) {
+          reportError(
+            serviceVersion
+              ? `Dynamic Web TWAIN Service version ${serviceVersion} is incompatible with JavaScript SDK version ${jsVersions.join(", ")}. Install a matching service version, then check again.`
+              : `Could not verify the Dynamic Web TWAIN Service version. Install a compatible service version for SDK ${jsVersions.join(", ")}, then check again.`,
+          );
+          return;
+        }
+
+        this.dwtObject = dwtObject;
+        this.bindViewer();
+        this.dwtService
           .getDevices()
-          .then(function (devices) {
-            let bNoDevices = devices.length == 0;
-            _this._initedDynamicWebTWAIN(dwtObject, bNoDevices);
-            _this._initDevices(devices);
+          .then((devices) => {
+            const bNoDevices = devices.length === 0;
+            this._initedDynamicWebTWAIN(dwtObject, bNoDevices);
+            this._initDevices(devices);
+
+            if (bNoDevices) {
+              reportError(
+                "Dynamic Web TWAIN is ready, but no scanner was detected. Connect a scanner and install its driver, then check again.",
+              );
+              return;
+            }
+
+            onStatusChange(true);
           })
-          .catch(function (exp) {
-            checkErrorStringWithErrorCode(-1, exp.message);
+          .catch((error) => {
+            reportError(
+              `Dynamic Web TWAIN could not load scanner devices: ${error?.message || String(error)}`,
+            );
           });
       },
-      function (error: any) {
-        typeof error === "string"
-          ? checkErrorStringWithErrorCode(-1, error)
-          : addMessage(error);
+      (error: any) => {
+        const detail =
+          typeof error === "string"
+            ? error
+            : error?.message || "The local service could not be reached.";
+        reportError(
+          `Dynamic Web TWAIN Service is unavailable or incompatible. Install or update the service to match SDK version ${jsVersions.join(", ")}, then check again. ${detail}`,
+        );
       },
     );
   }
