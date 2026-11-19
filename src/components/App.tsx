@@ -26,8 +26,17 @@ export interface DWTAppProps {
 
 const containerId = "dwtcontrolContainer";
 
-export default class DWTApp extends Component<DWTAppProps> {
+interface DWTAppState {
+  serviceState: "checking" | "ready" | "error";
+}
+
+export default class DWTApp extends Component<DWTAppProps, DWTAppState> {
   private dwtUtil: DwtUIOperations;
+  private isComponentMounted = false;
+
+  state: DWTAppState = {
+    serviceState: "checking",
+  };
 
   static defaultProps: DWTAppProps = {
     showHeader: true,
@@ -46,12 +55,24 @@ export default class DWTApp extends Component<DWTAppProps> {
   }
 
   componentDidMount() {
-    this.dwtUtil.onPageInit();
+    this.isComponentMounted = true;
+    this.checkDwtService();
   }
 
   componentWillUnmount() {
+    this.isComponentMounted = false;
     this.dwtUtil.destroy();
   }
+
+  private checkDwtService = () => {
+    this.setState({ serviceState: "checking" });
+    this.dwtUtil.onPageInit((ready) => {
+      if (!this.isComponentMounted) return;
+      this.setState({
+        serviceState: ready ? "ready" : "error",
+      });
+    });
+  };
 
   private handleSaveToLocal(res) {
     const { scannedFileDetails } = this.props;
@@ -62,7 +83,13 @@ export default class DWTApp extends Component<DWTAppProps> {
   }
 
   render() {
-    const { className, showHeader, strFileNameWithoutExt } = this.props;
+    const {
+      className,
+      showHeader,
+      strFileNameWithoutExt,
+    } = this.props;
+    const { serviceState } = this.state;
+    const serviceReady = serviceState === "ready";
     const HOST = defaultEnvironment.Dynamsoft.host;
 
     return (
@@ -93,19 +120,29 @@ export default class DWTApp extends Component<DWTAppProps> {
           </>
         )}
         <div className="ds-dwt-content ds-dwt-center">
-          <div id="DWTcontainerTop">
-            <DWTEditBar dwtUtil={this.dwtUtil} />
-            <div id={containerId} />
+          <div
+            aria-disabled={!serviceReady}
+            aria-busy={serviceState === "checking"}
+            inert={!serviceReady}
+            style={{
+              opacity: serviceReady ? 1 : 0.45,
+              pointerEvents: serviceReady ? "auto" : "none",
+            }}
+          >
+            <div id="DWTcontainerTop">
+              <DWTEditBar dwtUtil={this.dwtUtil} />
+              <div id={containerId} />
+            </div>
+            <div id="ScanWrapper">
+              <DWTScan dwtUtil={this.dwtUtil} />
+              <DWTUploadAndSave
+                dwtUtil={this.dwtUtil}
+                strFileNameWithoutExt={strFileNameWithoutExt || undefined}
+                scannedFileDetails={(res) => this.handleSaveToLocal(res)}
+              />
+            </div>
           </div>
-          <div id="ScanWrapper">
-            <DWTScan dwtUtil={this.dwtUtil} />
-            <DWTUploadAndSave
-              dwtUtil={this.dwtUtil}
-              strFileNameWithoutExt={strFileNameWithoutExt || undefined}
-              scannedFileDetails={(res) => this.handleSaveToLocal(res)}
-            />
-            <OutputMessage />
-          </div>
+          <OutputMessage />
         </div>
       </div>
     );
