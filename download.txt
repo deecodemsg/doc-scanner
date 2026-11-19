@@ -1,0 +1,5 @@
+https://github.com/Dynamsoft/Dynamic-Web-TWAIN/releases/tag/v18.5.1
+
+Scroll to asset section and download the source code
+Once downloaded navigate double click to  C:\Users\{your-adid}\Downloads\Dynamic-Web-TWAIN-18.5.1\dist\dist\DynamsoftServiceSetup.msi
+  
