@@ -89,7 +89,7 @@ export default class OutputMessage extends Component<{}, OutputMessageState> {
           open={open}
           autoHideDuration={6000}
           onClose={this.handleClose}
-          anchorOrigin={{ vertical: "center", horizontal: "right" }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >
           <Alert
             onClose={this.handleClose}
